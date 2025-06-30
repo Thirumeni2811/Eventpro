@@ -1,0 +1,99 @@
+﻿@model Event_Management.Models.Events
+
+@{
+    ViewData["Title"] = "Registration & Ticketing";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/create.css" />
+}
+
+<form asp-action="Tickets" asp-controller="Event" method="post" class="form-container">
+    @Html.AntiForgeryToken()
+
+    <div class="heading">Registration & Ticketing</div>
+    <div class="subheading">Configure attendee limits, pricing & policy</div>
+
+    <div class="form-grid">
+        <!-- IsPaid -->
+        <div class="form-group">
+            <label>Is the event Free or Paid?</label>
+            <div class="form-checks">
+                <div class="form-radio">
+                    <input asp-for="IsPaid" type="radio" value="Free" id="free" />
+                    <label for="free">Free</label>
+                </div>
+                <div class="form-radio">
+                    <input asp-for="IsPaid" type="radio" value="Paid" id="paid" />
+                    <label for="paid">Paid</label>
+                </div>
+            </div>
+            <span asp-validation-for="IsPaid" class="danger"></span>
+        </div>
+
+        <!-- TicketPricing -->
+        <div class="form-group paid-only" style="@(Model.IsPaid == "Paid" ? "" : "display: none;")">
+            <label asp-for="TicketPricing">Ticket Pricing</label>
+            <textarea asp-for="TicketPricing" class="form-control" placeholder="e.g., VIP - ₹999, General - ₹499"></textarea>
+            <span asp-validation-for="TicketPricing" class="danger"></span>
+        </div>
+
+        <!-- UPI ID -->
+        <div class="form-group paid-only" style="@(Model.IsPaid == "Paid" ? "" : "display: none;")">
+            <label asp-for="Payment">UPI ID</label>
+            <input asp-for="Payment" class="form-control" />
+            <span asp-validation-for="Payment" class="danger"></span>
+        </div>
+
+        <!-- MaxAttendees -->
+        <div class="form-group">
+            <label asp-for="MaxAttendees">Maximum Attendees</label>
+            <input asp-for="MaxAttendees" type="number" class="form-control" min="1" />
+            <span asp-validation-for="MaxAttendees" class="danger"></span>
+        </div>
+
+        <!-- RegistrationDeadline -->
+        @{
+            var currentDateTime = DateTime.Now.ToString("yyyy-MM-ddTHH:mm");
+        }
+
+        <div class="form-group">
+            <label asp-for="RegistrationDeadline">Registration Deadline</label>
+            <input asp-for="RegistrationDeadline" type="datetime-local" class="form-control" min="@currentDateTime" />
+            <span asp-validation-for="RegistrationDeadline" class="danger"></span>
+        </div>
+
+        <!-- CancellationPolicy -->
+        <div class="form-group paid-only" style="@(Model.IsPaid == "Paid" ? "" : "display: none;")>
+            <label asp-for="CancellationPolicy">Cancellation Policy</label>
+            <textarea asp-for="CancellationPolicy" class="form-control"></textarea>
+            <span asp-validation-for="CancellationPolicy" class="danger"></span>
+        </div>
+    </div>
+
+    <div class="btn">
+        <button type="button" class="back" onclick="window.history.back()">Back</button>
+        <button type="submit">Next</button>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            function togglePaidFields() {
+                const selected = $('input[name="IsPaid"]:checked').val();
+                if (selected === 'Paid') {
+                    $('.paid-only').show();
+                } else {
+                    $('.paid-only').hide();
+                }
+            }
+
+            togglePaidFields();
+            $('input[name="IsPaid"]').on('change', togglePaidFields);
+        });
+    </script>
+}

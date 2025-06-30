@@ -1,0 +1,359 @@
+﻿@model Event_Management.Models.EventsView
+
+@{
+    ViewData["Title"] = Model?.Event?.Name ?? "Event Information";
+    Layout = "~/Views/Shared/User.cshtml";
+    var data = Model?.User;
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/event.css" />
+}
+
+<section class="orgData">
+
+    @if (Model?.Event?.Status != "Completed")
+    {
+        <a class="btn" id="submit" asp-controller="Organizer" asp-action="Update" asp-route-id="@Model?.Event?.Id">
+            <button type="submit">
+                Update
+            </button>
+        </a>
+    }
+
+    @* Basic Event Information *@
+    <div class="step">
+        <div class="topic">
+            Basic Event Information
+        </div>
+        <div class="content">
+            <div class="pair">
+                <p class="key">Name</p>
+                <p class="value">@((Model?.Event?.Name ?? "-"))</p>
+            </div>
+            <div class="pair">
+                <p class="key">Type</p>
+                <p class="value">@((Model?.Event?.Type ?? "-"))</p>
+            </div>
+            <div class="pair">
+                <p class="key">Description</p>
+                <p class="value">@((Model?.Event?.Description ?? "-"))</p>
+            </div>
+            <div class="pair">
+                <p class="key">Theme</p>
+                <p class="value">@((Model?.Event?.Theme ?? "-"))</p>
+            </div>
+            <div class="pair">
+                <p class="key">DateTime</p>
+                <p class="value">@((Model?.Event?.DateTime.HasValue == true ? Model.Event.DateTime.Value.ToString("g") : "-"))</p>
+            </div>
+            <div class="pair">
+                <p class="key">Duration</p>
+                <p class="value">
+                    @{
+                        if (Model?.Event?.Duration.HasValue == true)
+                        {
+                            var totalHours = Model.Event.Duration.Value;
+                            var hours = (int)totalHours;
+                            var minutes = (int)((totalHours - hours) * 60);
+
+                            if (hours > 0 && minutes > 0)
+                            {
+                                @($"{hours} hour{(hours > 1 ? "s" : "")} {minutes} minutes")
+                            }
+                            else if (hours > 0)
+                            {
+                                @($"{hours} hour{(hours > 1 ? "s" : "")}")
+                            }
+                            else if (minutes > 0)
+                            {
+                                @($"{minutes} minutes")
+                            }
+                            else
+                            {
+                                @("-")
+                            }
+                        }
+                        else
+                        {
+                            @("-")
+                        }
+                    }
+                </p>
+
+            </div>
+            <div class="pair">
+                <p class="key">Venue</p>
+                <p class="value">@((Model?.Event?.Venue ?? "-"))</p>
+            </div>
+        </div>
+    </div>
+
+    @* Venue *@
+    <div class="step">
+        <div class="topic">
+            Venue Details
+        </div>
+        <div class="content">
+            <div class="pair">
+                <p class="key">Venue Name</p>
+                <p class="value">@((Model?.Event?.VenueName ?? "-"))</p>
+            </div>
+            <div class="pair">
+                <p class="key">Address</p>
+                <p class="value">@((Model?.Event?.Address ?? "-"))</p>
+            </div>
+            <div class="pair">
+                <p class="key">Environment</p>
+                <p class="value">@((Model?.Event?.Environment ?? "-"))</p>
+            </div>
+            <div class="pair">
+                <p class="key">Capacity</p>
+                <p class="value">@((Model?.Event?.Capacity != null) ? Model.Event.Capacity.ToString() : "-")</p>
+            </div>
+            <div class="pair">
+                <p class="key">Accessibility</p>
+                <p class="value">@((Model?.Event?.Accessibility ?? "-"))</p>
+            </div>
+        </div>
+    </div>
+
+    @* Registration & Ticketing *@
+    <div class="step">
+        <div class="topic">
+            Registration & Ticketing
+        </div>
+        <div class="content">
+            <div class="pair">
+                <p class="key">Paid or Free</p>
+                <p class="value">@((Model?.Event?.IsPaid ?? "-"))</p>
+            </div>
+            <div class="pair">
+                <p class="key">Ticket Pricing</p>
+                <p class="value">@((Model?.Event?.TicketPricing ?? "-"))</p>
+            </div>
+            <div class="pair">
+                <p class="key">Payment</p>
+                <p class="value">@((Model?.Event?.Payment ?? "-"))</p>
+            </div>
+            <div class="pair">
+                <p class="key">Maximum Attendees</p>
+                <p class="value">@((Model?.Event?.MaxAttendees != null) ? Model.Event.MaxAttendees.ToString() : "-")</p>
+            </div>
+            <div class="pair">
+                <p class="key">Tickets Sold</p>
+                <p class="value">@((Model?.TicketsCount != null) ? Model.TicketsCount.ToString() : "-")</p>
+            </div>
+            <div class="pair">
+                <p class="key">By Count</p>
+                <div class="value">
+                    @if (Model.TicketTypeCounts != null && Model.TicketTypeCounts.Any())
+                    {
+                        <div>
+                            @foreach (var item in Model.TicketTypeCounts)
+                            {
+                                <p>@item.Type - @item.Quantity Ticket@(item.Quantity == 1 ? "" : "s")</p>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p>No tickets sold yet.</p>
+                    }
+                </div>
+            </div>
+            <div class="pair">
+                <p class="key">Registration Deadline</p>
+                <p class="value">@((Model?.Event?.RegistrationDeadline.HasValue == true ? Model.Event.RegistrationDeadline.Value.ToString("g") : "-"))</p>
+            </div>
+            <div class="pair">
+                <p class="key">Cancellation Policy</p>
+                <p class="value">@((Model?.Event?.CancellationPolicy ?? "-"))</p>
+            </div>
+        </div>
+    </div>
+
+    @* Program Schedule *@
+    <div class="step">
+        <div class="topic">
+            Program Schedule
+        </div>
+        <div class="content">
+            <div class="pair">
+                <p class="key">Agenda</p>
+                <p class="value">@((Model?.Event?.Agenda ?? "-"))</p>
+            </div>
+            <div class="pair">
+                <p class="key">Activities</p>
+                <p class="value">@((Model?.Event?.Activities ?? "-"))</p>
+            </div>
+            <div class="pair">
+                <p class="key">Speakers</p>
+                <p class="value">@((Model?.Event?.Speakers ?? "-"))</p>
+            </div>
+            <div class="pair">
+                <p class="key">Breaks</p>
+                <p class="value">@((Model?.Event?.Breaks ?? "-"))</p>
+            </div>
+        </div>
+    </div>
+
+    @* Promotion & Communication *@
+    <div class="step">
+        <div class="topic">
+            Promotion & Communication
+        </div>
+        <div class="content">
+            <div class="pair">
+                <p class="key">Banner</p>
+                <img
+                     src="@(!string.IsNullOrEmpty(Model?.Event?.Banner) ? Model?.Event?.Banner : Url.Content("/images/Home2.jpg"))"
+                     class="value"
+                     alt="Event Banner" 
+                />
+            </div>
+            <div class="pair">
+                <p class="key">Platforms</p>
+                <p class="value">@((Model?.Event?.Platforms ?? "-"))</p>
+            </div>
+            <div class="pair">
+                <p class="key">Audience</p>
+                <p class="value">@((Model?.Event?.Audience ?? "-"))</p>
+            </div>
+            <div class="pair">
+                <p class="key">Sponsors</p>
+                <p class="value">@((Model?.Event?.Sponsors ?? "-"))</p>
+            </div>
+        </div>
+    </div>
+
+    @* Technical Requirements *@
+    <div class="step">
+        <div class="topic">
+            Technical Requirements
+        </div>
+        <div class="content">
+            <div class="pair">
+                <p class="key">Sound System</p>
+                <p class="value">@((Model?.Event?.SoundSystem == true) ? "Yes" : "No")</p>
+            </div>
+            <div class="pair">
+                <p class="key">Projection</p>
+                <p class="value">@((Model?.Event?.Projection == true) ? "Yes" : "No")</p>
+            </div>
+            <div class="pair">
+                <p class="key">Live Streaming</p>
+                <p class="value">@((Model?.Event?.LiveStreaming == true) ? "Yes" : "No")</p>
+            </div>
+            <div class="pair">
+                <p class="key">Internet</p>
+                <p class="value">@((Model?.Event?.Internet == true) ? "Yes" : "No")</p>
+            </div>
+            <div class="pair">
+                <p class="key">Power Backup </p>
+                <p class="value">@((Model?.Event?.PowerBackup == true) ? "Yes" : "No")</p>
+            </div>
+        </div>
+    </div>
+
+    @* Staffing & Management *@
+    <div class="step">
+        <div class="topic">
+            Staffing & Management
+        </div>
+        <div class="content">
+            <div class="pair">
+                <p class="key">Volunteers</p>
+                <p class="value">@((Model?.Event?.Volunteers == true) ? "Yes" : "No")</p>
+            </div>
+            <div class="pair">
+                <p class="key">Security</p>
+                <p class="value">@((Model?.Event?.Security == true) ? "Yes" : "No")</p>
+            </div>
+            <div class="pair">
+                <p class="key">Coordinators</p>
+                <p class="value">@((Model?.Event?.Coordinators == true) ? "Yes" : "No")</p>
+            </div>
+            <div class="pair">
+                <p class="key">Medical</p>
+                <p class="value">@((Model?.Event?.Medical == true) ? "Yes" : "No")</p>
+            </div>
+        </div>
+    </div>
+
+    @* Catering *@
+    <div class="step">
+        <div class="topic">
+            Catering
+        </div>
+        <div class="content">
+            <div class="pair">
+                <p class="key">Vegetarian </p>
+                <p class="value">@((Model?.Event?.Veg == true) ? "Yes" : "No")</p>
+            </div>
+            <div class="pair">
+                <p class="key">Non - Vegetarian </p>
+                <p class="value">@((Model?.Event?.NonVeg == true) ? "Yes" : "No")</p>
+            </div>
+            <div class="pair">
+                <p class="key">Menu</p>
+                <p class="value">@((Model?.Event?.Menu ?? "-"))</p>
+            </div>
+            <div class="pair">
+                <p class="key">Serving Style</p>
+                <p class="value">@((Model?.Event?.ServingStyle ?? "-"))</p>
+            </div>
+            <div class="pair">
+                <p class="key">Guest Count</p>
+                <p class="value">@((Model?.Event?.GuestCount != null) ? Model.Event.GuestCount.ToString() : "-")</p>
+            </div>
+        </div>
+    </div>
+
+    @* Post-Event Activitiest *@
+    <div class="step">
+        <div class="topic">
+            Post-Event Activities
+        </div>
+        <div class="content">
+            <div class="pair">
+                <p class="key">Feedback</p>
+                <p class="value">@((Model?.Event?.Feedback == true) ? "Yes" : "No")</p>
+            </div>
+            <div class="pair">
+                <p class="key">Media</p>
+                <p class="value">@((Model?.Event?.Media == true) ? "Yes" : "No")</p>
+            </div>
+            <div class="pair">
+                <p class="key">Coordinators</p>
+                <p class="value">@((Model?.Event?.Report == true) ? "Yes" : "No")</p>
+            </div>
+            <div class="pair">
+                <p class="key">Thanks You Notes</p>
+                <p class="value">@((Model?.Event?.Thanks == true) ? "Yes" : "No")</p>
+            </div>
+        </div>
+    </div>
+
+    @* Additional *@
+    <div class="step">
+        <div class="topic">
+            Additional
+        </div>
+        <div class="content">
+            <div class="pair">
+                <p class="key">Status</p>
+                <p class="value">@((Model?.Event?.Status ?? "-"))</p>
+            </div>
+            <div class="pair">
+                <p class="key">Message</p>
+                <p class="value">@((Model?.Event?.Message ?? "-"))</p>
+            </div>
+            <div class="pair">
+                <p class="key">Created At</p>
+                <p class="value">@Model?.Event?.CreatedAt.ToString("g")</p>
+            </div>
+        </div>
+    </div>
+
+</section>

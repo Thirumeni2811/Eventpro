@@ -1,0 +1,48 @@
+﻿@model Event_Management.Models.Events
+
+@{
+    ViewData["Title"] = "Post-Event";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/form.css" />
+}
+
+<form asp-action="Post" asp-controller="Event" method="post" class="form-container">
+    @Html.AntiForgeryToken()
+
+    <div class="heading">Post-Event Activities</div>
+    <div class="subheading">Post-event follow-up and documentation</div>
+
+    <div class="form-grid">
+        <div class="form-tech">
+            <input asp-for="Feedback" type="checkbox" id="feedback" />
+            <label for="feedback">Feedback Collection</label>
+        </div>
+
+        <div class="form-tech">
+            <input asp-for="Media" type="checkbox" id="media" />
+            <label for="media">Photos/Videos of the Event</label>
+        </div>
+
+        <div class="form-tech">
+            <input asp-for="Report" type="checkbox" id="report" />
+            <label for="report">Reports/Analytics</label>
+        </div>
+
+        <div class="form-tech">
+            <input asp-for="Thanks" type="checkbox" id="thanks" />
+            <label for="thanks">Thank You Notes to Attendees</label>
+        </div>
+    </div>
+
+    <div class="btn">
+        <button type="button" class="back" onclick="window.history.back()">Back</button>
+        <button type="submit">Next</button>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

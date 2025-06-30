@@ -1,0 +1,77 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>@ViewData["Title"] - Admin Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
+
+    @RenderSection("Styles", required: false)
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <nav class="sidebar" id="sidebar">
+            <p class="logo">EVENTPRO</p>
+            <div class="side">
+                <a asp-action="Service" asp-controller="Admin" class="@(ViewContext.RouteData.Values["action"].ToString() == "Service" ? "active" : "")">Service Management</a>
+                <a asp-action="Provide" asp-controller="Admin" class="@(ViewContext.RouteData.Values["action"].ToString() == "Provide" ? "active" : "")">Provide Management</a>
+                <a asp-action="Gallery" asp-controller="Admin" class="@(ViewContext.RouteData.Values["action"].ToString() == "Gallery" ? "active" : "")">Gallery Management</a>
+                <a asp-action="Users" asp-controller="Admin" class="@(ViewContext.RouteData.Values["action"].ToString() == "Users" ? "active" : "")">User Management</a>
+                <a asp-action="Events"
+                   asp-controller="Admin"
+                   class="@(new[] { "Events", "EventDetails" }.Contains(ViewContext.RouteData.Values["action"]?.ToString()) ? "active" : "")">
+                    Event Management
+                </a>
+                <a asp-action="Ticket" asp-controller="Admin" class="@(ViewContext.RouteData.Values["action"].ToString() == "Ticket" ? "active" : "")">Ticket Management</a>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content" id="mainContent">
+            <!-- Header -->
+            <header class="main-header">
+                <button class="hamburger" id="hamburger">&#9776;</button>
+                <div class="header-right">
+                    <span class="admin">ADMIN</span>
+                    <a asp-action="Logout" asp-controller="Admin" class="logout-link">Logout</a>
+                </div>
+            </header>
+
+            <!-- Page Content -->
+            <section class="page-content">
+                @RenderBody()
+            </section>
+        </main>
+    </div>
+
+    @RenderSection("Scripts", required: false)
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            // Toggle sidebar
+            $('#hamburger').on('click', function (e) {
+                e.stopPropagation();
+                $('#sidebar').toggleClass('open');
+            });
+
+            // Close sidebar when clicking outside
+            $(document).on('click', function (e) {
+                var $sidebar = $('#sidebar');
+                var $hamburger = $('#hamburger');
+                if ($sidebar.hasClass('open')) {
+                    if (
+                        !$sidebar.is(e.target) &&
+                        $sidebar.has(e.target).length === 0 &&
+                        !$hamburger.is(e.target) &&
+                        $hamburger.has(e.target).length === 0
+                    ) {
+                        $sidebar.removeClass('open');
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

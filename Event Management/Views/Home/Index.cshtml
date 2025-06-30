@@ -1,0 +1,235 @@
+﻿@model Event_Management.Models.HomeView
+
+@{
+    ViewData["Title"] = "Home Page";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EVENT PRO</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap"
+          rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Lobster&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Limelight&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="~/js/site.js"></script>
+    <script src="~/js/gallery.js"></script>
+    <script src="~/js/provide.js"></script>
+    <script src="~/js/services.js"></script>
+</head>
+
+<body>
+
+    <header>
+        Your One-Stop Hub to Book Events & Tickets
+    </header>
+
+    <nav>
+        <div>
+            <p class="logo">EVENTPRO</p>
+        </div>
+
+        <ul class="topics">
+            <li><a href="#home">Home</a></li>
+            <li><a href="#about">About Us</a></li>
+            <li><a href="#service">Services</a></li>
+            <li><a href="#gallery">Gallery</a></li>
+            <li><a href="#footer">Contact Us</a></li>
+            @if (Model.Role == "User")
+            {
+                <li>
+                    <a asp-controller="User" asp-action="UserEvent">My Events</a>
+                </li>
+            }
+            else if (Model.Role == "Organizer")
+            {
+                <li>
+                    <a asp-controller="Organizer" asp-action="OrgEvents">My Events</a>
+                </li>
+            }
+            <li class="bookButton">
+                <a asp-controller="Event" asp-action="Basics">
+                    Book an Event
+                </a>
+            </li>
+        </ul>
+
+        <div class="hamburger" aria-label="Menu" tabindex="0">
+            &#9776;
+        </div>
+    </nav>
+
+    <!-- Home -->
+    <section id="home">
+
+        <div class="content">
+            <h1>
+                Welcome to EventPro
+            </h1>
+            <h4>
+                Your One-Stop Solution for Memorable Events
+            </h4>
+            <div class="tagline">
+                <p>
+                    Bring your vision to life by creating exceptional events with ease. Whether you're hosting or
+                    attending,
+                    our platform connects you to unforgettable experiences. Discover, plan, and engage — all in one
+                    refined
+                    space.
+                </p>
+            </div>
+            <div class="event">
+                <a asp-controller="Event" asp-action="Basics" class="book">
+                    Book an Event
+                </a>
+                <a asp-controller="Ticket" asp-action="AllEvents" class="book">
+                    Get Tickets
+                </a>
+            </div>
+        </div>
+
+    </section>
+
+    <!-- About Us -->
+    <section id="about">
+        <h2 class="title">ABOUT US</h2>
+        <p class="subtitle">
+            Crafting memorable moments through personalized, seamless, and professional event
+            experiences — for every occasion, big or small
+        </p>
+        <div class="about">
+            <img src="images\About.webp" alt="About" />
+            <div class="abContent">
+                <p>
+                    Welcome to EVENTPRO, your trusted partner in event management.
+                    We specialize in creating seamless and memorable experiences for all types of events, whether
+                    private or public. From intimate family celebrations and exclusive corporate gatherings to
+                    large-scale festivals and public concerts, we handle every detail with care and professionalism.
+                </p>
+
+                <p>
+                    Our experienced team is passionate about turning your vision into reality, no matter the size or
+                    style of the event. Weddings, birthdays, product launches, exhibitions, or community events — we
+                    provide personalized service and creative solutions tailored to your needs.
+                </p>
+
+                <p>
+                    At EVENTPRO, we bring creativity, professionalism, and personalized attention to ensure your
+                    occasion is flawless and unforgettable. Let us help you plan, organize, and execute your next event
+                    with excellence.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Services -->
+    <section id="service">
+        <h2 class="title">OUR SERVICES</h2>
+        <p class="subtitle">
+            We specialize in organizing a wide range of events tailored to your needs — from personal to
+            professional, public to private
+        </p>
+        @* <div id="serviceContainer" class="serGrid"></div> *@
+        <div class="serGrid">
+            @foreach (var service in Model.Services)
+            {
+                <div class="card">
+                    <img src="@service.Img" alt="@service.Title" />
+                    <h3>@service.Title</h3>
+                     <p>@service.Description</p>
+                </div>
+            }
+        </div>
+    </section>
+
+    <!-- What we provide -->
+    <section id="provide">
+        <h1 class="title">WHAT WE PROVIDE</h1>
+        <p class="subtitle">
+            From private parties to public events, we offer tailored event solutions — paid or free,
+            intimate or grand, all under one roof
+        </p>
+            @* <div id="provideContainer" class="marquee-content"></div> *@
+            <div class="marquee-wrapper">
+                <div class="marquee-content">
+                    @foreach (var service in Model.Provides)
+                    {
+                        <div class="card2">
+                            <img src="@service.Img" alt="@service.Title" />
+                            <h3>@service.Title</h3>
+                            <p>@service.Description</p>
+                        </div>
+                    }
+                </div>
+            </div>
+    </section>
+
+    <!-- Gallery -->
+    <section id="gallery">
+        <h2 class="title">OUR GALLERY</h2>
+        <p class="subtitle">
+            A glimpse into our vibrant and unforgettable events
+        </p>
+
+        @* <div id="gallerContainer" class="galGrid"></div> *@
+        <div class="galGrid">
+            @foreach (var item in Model.Gallery)
+            {
+                <div class="card3">
+                    <img src="@item.Banner" alt="@item.Name" />
+                    <div class="galCont">
+                        <p class="payee">@item.Type</p>
+                        <h3>@item.Name</h3>
+                        <p class="description">@item.Description</p>
+                        @* <div class="readMore">See more &gt;&gt;</div> *@
+                    </div>
+                </div>
+            }
+        </div>
+        
+    </section>
+    
+    <!-- Footer -->
+    <footer id="footer">
+        <div class="footer">
+            <h1 class="ftitle">EVENTPRO</h1>
+            <div class="footer-contact">
+                <div class="floc">
+                    <img src="/images/Location.svg" alt="Location" />
+                    <p>123 Celebration Avenue, Event City, EC 45678, India</p>
+                </div>
+                <div class="floc">
+                    <img src="/images/Email.svg" alt="Email" />
+                    <p>info@eventpro.com</p>
+                </div>
+                <div class="floc">
+                    <img src="/images/Phone.svg" alt="Phone" />
+                    <p>91 9876543210</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="links">
+            <div>
+                <p>Quick Links</p>
+            </div>
+            <a href="#home">Home</a>
+            <a href="#about">About Us</a>
+            <a href="#service">Services</a>
+            <a href="#gallery">Gallery</a>
+            <a href="#contact">Contact Us</a>
+        </div>
+
+    </footer>
+
+</body>
+
+</html>

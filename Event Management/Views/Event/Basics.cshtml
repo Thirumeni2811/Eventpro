@@ -1,0 +1,85 @@
+﻿@model Event_Management.Models.Events
+
+@{
+    ViewData["Title"] = "Event Information";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/create.css" />
+}
+
+<form asp-action="Basics" asp-controller="Event" method="post" class="form-container">
+    @Html.AntiForgeryToken()
+
+    <div class="heading">Basic Event Information</div>
+    <div class="subheading">Describe what your event is about</div>
+
+    <div class="form-grid">
+
+        <div class="form-group">
+            <label asp-for="Name">Event Name / Title</label>
+            <input asp-for="Name" class="form-control" />
+            <span asp-validation-for="Name" class="danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Type">Event Type</label>
+            <select asp-for="Type" class="form-control">
+                <option value="">Event Type</option>
+                <option value="Organizer">Organizer-Paid (Invitation Only)</option>
+                <option value="Paid">Public-Paid (Ticketed)</option>
+                <option value="Free">Free Entry (Open to All)</option>
+            </select>
+            <span asp-validation-for="Type" class="danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Description">Event Description</label>
+            <textarea asp-for="Description" class="form-control"></textarea>
+            <span asp-validation-for="Description" class="danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Theme">Theme Concept</label>
+            <input asp-for="Theme" class="form-control" />
+            <span asp-validation-for="Theme" class="danger"></span>
+        </div>
+
+        @{
+            var currentDateTime = DateTime.Now.ToString("yyyy-MM-ddTHH:mm");
+        }
+
+        <div class="form-group">
+            <label asp-for="DateTime">Date & Time</label>
+            <input asp-for="DateTime" type="datetime-local" class="form-control" min="@currentDateTime" />
+            <span asp-validation-for="DateTime" class="danger"></span>
+        </div>
+
+
+        <div class="form-group">
+            <label asp-for="Duration">Duration (in hours)</label>
+            <input asp-for="Duration" class="form-control" type="number" min="1" step="0.5" placeholder="Eg. 1.00" />
+            <span asp-validation-for="Duration" class="danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Venue">Venue / Location</label>
+            <select asp-for="Venue" class="form-control">
+                <option value="">Venue Type</option>
+                <option value="Online">Online</option>
+                <option value="Offline">Offline</option>
+            </select>
+            <span asp-validation-for="Venue" class="danger"></span>
+        </div>
+    </div>
+
+    <div class="btn">
+        <button type="submit">Create Event</button>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
+

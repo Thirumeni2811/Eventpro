@@ -1,0 +1,50 @@
+﻿@model Event_Management.Models.Events
+
+@{
+    ViewData["Title"] = "Staffing & Management";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/form.css" />
+}
+
+<form asp-action="Staffs" asp-controller="Event" method="post" class="form-container">
+    @Html.AntiForgeryToken()
+
+    <div class="heading">Staffing & Management</div>
+    <div class="subheading">Select the support staff required for the event</div>
+
+    <div class="form-grid">
+
+        <div class="form-tech">
+            <input asp-for="Volunteers" type="checkbox" class="form-check-input" />
+            <label asp-for="Volunteers">Volunteers / Support Staff</label>
+        </div>
+
+        <div class="form-tech">
+            <input asp-for="Security" type="checkbox" class="form-check-input" />
+            <label asp-for="Security">Security Arrangements</label>
+        </div>
+
+        <div class="form-tech">
+            <input asp-for="Coordinators" type="checkbox" class="form-check-input" />
+            <label asp-for="Coordinators">Event Coordinators</label>
+        </div>
+
+        <div class="form-tech">
+            <input asp-for="Medical" type="checkbox" class="form-check-input" />
+            <label asp-for="Medical">Medical / Emergency Support</label>
+        </div>
+
+    </div>
+
+    <div class="btn">
+        <button type="button" class="back" onclick="window.history.back()">Back</button>
+        <button type="submit">Next</button>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

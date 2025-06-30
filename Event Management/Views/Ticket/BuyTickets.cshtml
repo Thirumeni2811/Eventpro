@@ -1,0 +1,240 @@
+﻿@model Event_Management.Models.EventsView
+
+@{
+    ViewData["Title"] = Model?.Event?.Name ?? "Event Information";
+    Layout = "~/Views/Shared/User.cshtml";
+    var data = Model?.User;
+
+    // price type
+    var pricingText = Model?.Event?.TicketPricing ?? "";
+    var priceItems = new List<(string Label, int Price)>();
+
+    // Helper function to generate A-Z, AA, AB, etc.
+    string GetSuffix(int index)
+    {
+        var result = "";
+        while (index >= 0)
+        {
+            result = (char)('A' + (index % 26)) + result;
+            index = (index / 26) - 1;
+        }
+        return result;
+    }
+
+    if (!string.IsNullOrWhiteSpace(pricingText))
+    {
+        var parts = pricingText.Split(',', StringSplitOptions.RemoveEmptyEntries);
+
+        var unlabelledPrices = new List<int>();
+
+        foreach (var part in parts)
+        {
+            var trimmed = part.Trim();
+
+            if (trimmed.Contains("-"))
+            {
+                var split = trimmed.Split('-', StringSplitOptions.RemoveEmptyEntries);
+                var label = split[0].Trim();
+                var priceStr = split[1].Trim();
+                if (int.TryParse(priceStr, out int price))
+                {
+                    priceItems.Add((label, price));
+                }
+            }
+            else
+            {
+                if (int.TryParse(trimmed, out int price))
+                {
+                    unlabelledPrices.Add(price);
+                }
+            }
+        }
+
+        if (unlabelledPrices.Count == 1)
+        {
+            priceItems.Add(("General", unlabelledPrices[0]));
+        }
+        else if (unlabelledPrices.Count > 1)
+        {
+            for (int i = 0; i < unlabelledPrices.Count; i++)
+            {
+                var suffix = GetSuffix(i);
+                priceItems.Add(($"General {suffix}", unlabelledPrices[i]));
+            }
+        }
+    }
+}
+
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/event.css" />
+}
+
+<section class="ticData">
+
+    <div class="type-det">
+
+        <form id="ticketForm" asp-controller="Ticket" asp-action="BookTickets" asp-route-id="@Model?.Event?.Id" method="post">
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="validation-summary-errors">
+                    @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                    {
+                        <div class="error-message">@error.ErrorMessage</div>
+                    }
+                </div>
+            }
+
+            <div class="price-list">
+                @if (Model?.Event?.IsPaid == "Free")
+                {
+                    <div class="ticket-row" data-price="0">
+                        <div class="ticket-info">
+                            <p class="ticket-label">General Admission</p>
+                            <p class="ticket-price">₹0</p>
+                        </div>
+                        <div class="quantity-control">
+                            <button type="button" class="decrement">-</button>
+                            <input type="number" name="quantities[General]" value="0" min="0" readonly />
+                            <button type="button" class="increment">+</button>
+                        </div>
+                    </div>
+                }
+                else if (priceItems.Any())
+                {
+                    @foreach (var item in priceItems)
+                    {
+                        <div class="ticket-row" data-price="@item.Price">
+                            <div class="ticket-info">
+                                <p class="ticket-label">@item.Label</p>
+                                <p class="ticket-price">₹@item.Price</p>
+                            </div>
+                            <div class="quantity-control">
+                                <button type="button" class="decrement">-</button>
+                                <input type="number" name="quantities[@item.Label]" value="0" min="0" readonly />
+                                <button type="button" class="increment">+</button>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <p>No pricing information available.</p>
+                }
+            </div>
+
+            @if (Model?.Event?.IsPaid == "Free" || priceItems.Any())
+            {
+                <div class="btn2" id="submit">
+                    <button type="submit" id="submitButton" class="buttt">BOOK</button>
+                </div>
+            }
+
+        </form>
+    </div>
+
+
+    <div class="ticket-det">
+        <div id="denominationList">
+            <!-- Denomination rows will be inserted dynamically here -->
+        </div>
+        <div class="booking-fee deno">
+            <div>Booking Fee (3%)</div>
+            <div class="pricing">
+                <span>₹</span><span id="bookingFee">0</span>
+            </div>
+        </div>
+
+        <div class="total deno">
+            <div>Grand Total</div>
+            <div class="pricing">
+                <span>₹</span><span id="grandTotal">0</span>
+            </div>
+        </div>
+
+    </div>
+
+
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+                $(document).ready(function () {
+            const $rows = $('.ticket-row');
+            const $grandTotalSpan = $('#grandTotal');
+            const $bookingFeeSpan = $('#bookingFee');
+            const $denominationList = $('#denominationList');
+            const $submitButton = $("#submitButton");
+            const $loader = $("#loader");
+
+            $rows.each(function () {
+                const $row = $(this);
+                const $decrementBtn = $row.find('.decrement');
+                const $incrementBtn = $row.find('.increment');
+                const $input = $row.find('input');
+
+                $decrementBtn.on('click', function () {
+                    let val = parseInt($input.val());
+                    if (val > 0) {
+                        $input.val(val - 1);
+                        updateTotals();
+                    }
+                });
+
+                $incrementBtn.on('click', function () {
+                    let val = parseInt($input.val());
+                    $input.val(val + 1);
+                    updateTotals();
+                });
+            });
+
+            function updateTotals() {
+                let total = 0;
+                $denominationList.empty();
+
+                $rows.each(function () {
+                    const $row = $(this);
+                    const qty = parseInt($row.find('input').val());
+                    const price = parseInt($row.data('price'));
+                    const label = $row.find('.ticket-label').text();
+
+                    const subtotal = qty * price;
+                    total += subtotal;
+
+                    if (qty > 0) {
+                        const denominationHtml = `
+                            <div class="denomination deno">
+                                <div>${label} × ${qty}</div>
+                                <div class="pricing">₹${subtotal}</div>
+                            </div>
+                        `;
+                        $denominationList.append(denominationHtml);
+                    }
+                });
+
+                const bookingFee = Math.ceil(total * 0.03);
+                const grandTotal = total + bookingFee;
+
+                $bookingFeeSpan.text(bookingFee);
+                $grandTotalSpan.text(grandTotal);
+            }
+
+            // Run once on load
+            updateTotals();
+
+            // Submit with loader and delay
+            $submitButton.on("click", function (e) {
+                e.preventDefault(); // prevent immediate submission
+                $loader.fadeIn();
+                $submitButton.prop("disabled", true).text("Processing...");
+
+                setTimeout(function () {
+                    $("#ticketForm").submit();
+                }, 2000);
+            });
+        });
+
+    </script>
+}

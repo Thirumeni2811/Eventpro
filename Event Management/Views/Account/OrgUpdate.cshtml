@@ -1,0 +1,94 @@
+﻿@model Event_Management.Models.Users
+
+@{
+    ViewData["Title"] = "Organization | Profile update";
+    Layout = "/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/update.css" />
+}
+
+<form asp-action="OrgUpdate" asp-controller="Account" method="post" class="form-container" enctype="multipart/form-data">
+    @Html.AntiForgeryToken()
+
+    <div class="heading">Update Organizer Profile</div>
+    <div class="subheading">Keep your organizer profile updated</div>
+
+    <div>
+        <label asp-for="ImageFile">
+            <div class="image-cont">
+                <img id="previewImage"
+                     src="@(string.IsNullOrEmpty(Model?.Image)
+                                             ? Url.Content("~/images/Acc.png")
+                                             : Model.Image)"
+                     alt="Profile"
+                     class="profile-img" />
+            </div>
+        </label>
+
+        <input asp-for="ImageFile" type="file" id="ImageFile" accept="image/*" style="display: none;" />
+    </div>
+
+    <div class="form-grid4">
+        <div class="form-group">
+            <label asp-for="Name">Organizer Name/Company</label>
+            <input asp-for="Name" class="form-control" />
+            <span asp-validation-for="Name" class="danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Person">Contact Person</label>
+            <input asp-for="Person" class="form-control" />
+            <span asp-validation-for="Person" class="danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Address">Address</label>
+            <textarea asp-for="Address" class="form-control"></textarea>
+            <span asp-validation-for="Address" class="danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Email">Email Address</label>
+            <input asp-for="Email" class="form-control" />
+            <span asp-validation-for="Email" class="danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="PhoneNo">Phone Number</label>
+            <input asp-for="PhoneNo" class="form-control" />
+            <span asp-validation-for="PhoneNo" class="danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Website">Website (if any)</label>
+            <input asp-for="Website" class="form-control" />
+            <span asp-validation-for="Website" class="danger"></span>
+        </div>
+    </div>
+
+    <div class="btnn">
+        <button type="submit">Update</button>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(function () {
+            $('#ImageFile').on('change', function (e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        $('#previewImage').attr('src', e.target.result);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        });
+    </script>
+
+}

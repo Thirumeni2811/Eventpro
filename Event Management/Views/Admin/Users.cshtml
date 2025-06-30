@@ -1,0 +1,199 @@
+﻿@model Event_Management.Models.Users
+
+@{
+    ViewData["Title"] = "Users";
+    Layout = "~/Views/Shared/Admin.cshtml";
+    var userId = ViewData["Id"] as string;
+    var name = ViewData["Name"] as string;
+    var email = ViewData["Email"] as string;
+    var phone = ViewData["Phone"] as string;
+    var role = ViewData["Role"] as string;
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin.css" />
+}
+
+<section>
+
+    @* Form *@
+    <form asp-action="Users" asp-controller="Admin" method="post" enctype="multipart/form-data" class="form-container">
+        <div class="formm">
+            <input asp-for="Id" type="hidden" />
+
+            <div class="form-group">
+                <label asp-for="Name">Name</label>
+                <input asp-for="Name" class="form-control" />
+                <span asp-validation-for="Name" class="danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Role">Role</label>
+                <select asp-for="Role" class="form-control">
+                    <option value="">--Role--</option>
+                    <option value="Organizer">Organizer</option>
+                    <option value="User">User</option>
+                </select>
+                <span asp-validation-for="Role" class="danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Email">Email Address</label>
+                <input asp-for="Email" class="form-control" />
+                <span asp-validation-for="Email" class="danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="PhoneNo">Phone Number</label>
+                <input asp-for="PhoneNo" class="form-control" />
+                <span asp-validation-for="PhoneNo" class="danger"></span>
+            </div>
+
+            @if (Model.Id == Guid.Empty)
+            {
+                <div class="form-group">
+                    <label asp-for="Password">Password</label>
+                    <input asp-for="Password" class="form-control" />
+                    <span asp-validation-for="Password" class="danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="CPassword">Confirm Password</label>
+                    <input asp-for="CPassword" class="form-control" />
+                    <span asp-validation-for="CPassword" class="danger"></span>
+                </div>
+            }
+
+        </div>
+
+        <div class="sub-button">
+            <button type="submit" class="submit">
+                @(Model.Id != Guid.Empty ? "Update" : "Add")
+            </button>
+        </div>
+    </form>
+
+
+    @* Table *@
+    <div class="table-container">
+
+        <div class="filters">
+
+            <form method="get" asp-controller="Admin" asp-action="Users" class="search-form1" enctype="multipart/form-data">
+
+                @* Id Search *@
+                <input type="text" name="userId" placeholder="Search by Id..." value="@userId" />
+
+                @* Name Search *@
+                <input type="text" name="name" placeholder="Search by Name..." value="@name" />
+
+                @* Email Search *@
+                <input type="text" name="email" placeholder="Search by email..." value="@email" />
+
+                @* Phone number Search *@
+                <input type="text" name="phoneNo" placeholder="Search by phone..." value="@phone" />
+
+                @* Type Filter *@
+                <select name="role" class="form-control">
+                    <option value="">Role</option>
+
+                    @if (role == "Organizer")
+                    {
+                        <option value="Organizer" selected>Organizer</option>
+                    }
+                    else
+                    {
+                        <option value="Organizer">Organizer</option>
+                    }
+
+                    @if (role == "User")
+                    {
+                        <option value="User" selected>User</option>
+                    }
+                    else
+                    {
+                        <option value="User">User</option>
+                    }
+                </select>
+
+                @* Count *@
+
+                <div class="buttons1">
+                    @* submit *@
+                    <button type="submit" class="submit">
+                        <img src="@Url.Content("~/images/Search.svg")" alt="Search" />
+                        Search
+                    </button>
+
+                    @* reset *@
+                    <a asp-controller="Admin" asp-action="Users" class="reset">
+                        <img src="@Url.Content("~/images/Reset.svg")" alt="Search" />
+                        Reset
+                    </a>
+                </div>
+
+            </form>
+        </div>
+
+        <div class="tabless">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>S.No</th>
+                        <th>Name</th>
+                        <th>Email Address</th>
+                        <th>Phone Number</th>
+                        <th>Role</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                    <tbody>
+                        @{
+                            var usersList = (List<Event_Management.Models.Users>)ViewBag.UsersList;
+                        }
+
+                        @if (usersList.Any())
+                        {
+                            var index = 1;
+                            foreach (var user in usersList)
+                            {
+                                <tr>
+                                    <td>@index</td>
+                                    <td>@user.Name</td>
+                                    <td>@user.Email</td>
+                                    <td>@user.PhoneNo</td>
+                                    <td>@user.Role</td>
+                                    <td>
+                                        <a asp-action="Users" asp-controller="Admin" asp-route-id="@user.Id">
+                                            <img src="@Url.Content("~/images/Edit.svg")" alt="Edit" class="action-image" />
+                                        </a>
+                                        <form asp-action="DeleteUser" asp-controller="Admin" asp-route-id="@user.Id" method="post" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this user?');">
+                                            <button type="submit" style="border:none; background:none; padding:0; cursor:pointer;">
+                                                <img src="@Url.Content("~/images/Delete.svg")" alt="Delete" class="action-image" />
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                index++;
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="6" class="no-data">
+                                    No users found.
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+
+            </table>
+        </div>
+
+    </div>
+
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

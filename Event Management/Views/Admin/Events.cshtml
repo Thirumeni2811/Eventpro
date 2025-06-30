@@ -1,0 +1,223 @@
+﻿@model Event_Management.Models.Events
+
+@{
+    ViewData["Title"] = "Users";
+    Layout = "~/Views/Shared/Admin.cshtml";
+    var eventId = ViewData["EventId"] as string;
+    var name = ViewData["Name"] as string;
+    var organizedBy = ViewData["OrganizedBy"] as string;
+    var type = ViewData["Type"] as string;
+    var venue = ViewData["Venue"] as string;
+    var status = ViewData["Status"] as string;
+    var isPaid = ViewData["IsPaid"] as string;
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin.css" />
+}
+
+<section>
+
+    @* Table *@
+    <div class="table-container">
+
+        <div class="filters">
+
+            <form method="get" asp-controller="Admin" asp-action="Events" class="search-form1" enctype="multipart/form-data">
+
+                @* Event Id *@
+                <input type="text" name="eventId" placeholder="Search by Event Id..." value="@eventId" />
+
+                @* Event Name *@
+                <input type="text" name="name" placeholder="Search by Event Name..." value="@name" />
+
+                @* Organizer Name *@
+                <input type="text" name="organizedBy" placeholder="Search by Organizer Name..." value="@organizedBy" />
+
+                @* Type Dropdown *@
+                <select name="type" class="form-control">
+                    <option value="">Type</option>
+
+                    @if (type == "Paid")
+                    {
+                        <option value="Paid" selected>Paid</option>
+                    }
+                    else
+                    {
+                        <option value="Paid">Paid</option>
+                    }
+
+                    @if (type == "Free")
+                    {
+                        <option value="Free" selected>Free</option>
+                    }
+                    else
+                    {
+                        <option value="Free">Free</option>
+                    }
+
+                    @if (type == "Organizer")
+                    {
+                        <option value="Organizer" selected>Organizer</option>
+                    }
+                    else
+                    {
+                        <option value="Organizer">Organizer</option>
+                    }
+                </select>
+
+                @* Status Dropdown *@
+                <select name="status" class="form-control">
+                    <option value="">Status</option>
+
+                    @if (status == "Upcoming")
+                    {
+                        <option value="Upcoming" selected>Upcoming</option>
+                    }
+                    else
+                    {
+                        <option value="Upcoming">Upcoming</option>
+                    }
+
+                    @if (status == "Completed")
+                    {
+                        <option value="Completed" selected>Completed</option>
+                    }
+                    else
+                    {
+                        <option value="Completed">Completed</option>
+                    }
+                </select>
+
+                @* Venue Dropdown *@
+                <select name="venue" class="form-control">
+                    <option value="">Venue</option>
+
+                    @if (venue == "Offline")
+                    {
+                        <option value="Offline" selected>Offline</option>
+                    }
+                    else
+                    {
+                        <option value="Offline">Offline</option>
+                    }
+
+                    @if (venue == "Online")
+                    {
+                        <option value="Online" selected>Online</option>
+                    }
+                    else
+                    {
+                        <option value="Online">Online</option>
+                    }
+                </select>
+
+                @* isPaid Dropdown *@
+                <select name="isPaid" class="form-control">
+                    <option value="">isPaid</option>
+
+                    @if (isPaid == "Paid")
+                    {
+                        <option value="Paid" selected>Paid</option>
+                    }
+                    else
+                    {
+                        <option value="Paid">Paid</option>
+                    }
+
+                    @if (isPaid == "Free")
+                    {
+                        <option value="Free" selected>Free</option>
+                    }
+                    else
+                    {
+                        <option value="Free">Free</option>
+                    }
+                </select>
+
+                <div class="buttons1">
+                    @* submit *@
+                    <button type="submit" class="submit">
+                        <img src="@Url.Content("~/images/Search.svg")" alt="Search" />
+                        Search
+                    </button>
+
+                    @* reset *@
+                    <a asp-controller="Admin" asp-action="Events" class="reset">
+                        <img src="@Url.Content("~/images/Reset.svg")" alt="Search" />
+                        Reset
+                    </a>
+                </div>
+
+                <div class="count">
+                    <p class="ct-total">Count - @ViewBag.EventsCount</p>
+                </div>
+
+            </form>
+        </div>
+
+        <div class="tabless">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>S.No</th>
+                        <th>Event Name</th>
+                        <th>Organizer</th>
+                        <th>Type</th>
+                        <th>Venue</th>
+                        <th>Status</th>
+                        <th>IsPaid</th>
+                        <th>Event Date</th>
+                        <th>Created At</th>
+                        <th>View</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        var eventList = (List<Event_Management.Models.Events>)ViewBag.EventList;
+                    }
+
+                    @if (eventList.Any())
+                    {
+                        var index = 1;
+                        foreach (var ev in eventList)
+                        {
+                            <tr>
+                                <td>@index</td>
+                                <td>@ev.Name</td>
+                                <td>@ev.User.Name</td>
+                                <td>@ev.Type</td>
+                                <td>@ev.Venue</td>
+                                <td>@ev.Status</td>
+                                <td>@ev.IsPaid</td>
+                                <td>@(ev.DateTime?.ToString("MMM dd yyyy | hh:mm tt") ?? "-")</td>
+                                <td>@ev.CreatedAt.ToString("MMM dd yyyy | hh:mm tt")</td>
+                                <td>
+                                    <a asp-action="EventDetails" asp-controller="Admin" asp-route-id="@ev.Id">
+                                        <img src="@Url.Content("~/images/View.svg")" alt="View" class="action-image" />
+                                    </a>
+                                </td>
+                            </tr>
+                            index++;
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6" class="no-data">
+                                No Events found.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+
+            </table>
+        </div>
+
+    </div>
+
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

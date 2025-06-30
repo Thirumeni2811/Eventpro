@@ -1,0 +1,42 @@
+﻿
+main {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+header {
+    width: 100%;
+    margin: 0;
+    padding: 0.3rem 0;
+    background-color: #6a0dad;
+    margin-bottom: 1rem;
+}
+
+.logoo {
+    font-size: 1.4rem;
+    color: #d6c6e1;
+    font-weight: 900;
+    font-size: 2rem;
+    font-family: cursive;
+    padding: 0.5rem;
+    padding-left: 3rem;
+}
+
+a {
+    text-decoration: none;
+}
+
+.container {
+    min-height: calc(100dvh - 70px); 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column; 
+}
+
+@media (max-width: 578px) {
+    .logoo {
+        font-size: 1.3rem;
+        padding-left: 1rem;
+    }
+}

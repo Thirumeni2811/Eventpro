@@ -1,0 +1,439 @@
+﻿@model Event_Management.Models.Events
+
+@{
+    ViewData["Title"] = "Event Information";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/create.css" />
+}
+
+<form asp-action="Main" asp-controller="Event" method="post" class="main" enctype="multipart/form-data">
+    @Html.AntiForgeryToken()
+
+    @* Basic event *@
+    <div class="main-container">
+        <div class="heading">Basic Event Information</div>
+        <div class="form-grid2">
+
+            <div class="form-group">
+                <label asp-for="Name">Event Name / Title</label>
+                <input asp-for="Name" class="form-control" />
+                <span asp-validation-for="Name" class="danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Type">Event Type</label>
+                <select asp-for="Type" class="form-control" id="typeSelector">
+                    <option value="">Event Type</option>
+                    <option value="Organizer">Organizer-Paid (Invitation Only)</option>
+                    <option value="Paid">Public-Paid (Ticketed)</option>
+                    <option value="Free">Free Entry (Open to All)</option>
+                </select>
+                <span asp-validation-for="Type" class="danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Description">Event Description</label>
+                <textarea asp-for="Description" class="form-control"></textarea>
+                <span asp-validation-for="Description" class="danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Theme">Theme Concept</label>
+                <input asp-for="Theme" class="form-control" />
+                <span asp-validation-for="Theme" class="danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="DateTime">Date & Time</label>
+                <input asp-for="DateTime" type="datetime-local" class="form-control" />
+                <span asp-validation-for="DateTime" class="danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Duration">Duration</label>
+                <input asp-for="Duration" class="form-control" />
+                <span asp-validation-for="Duration" class="danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Venue">Venue / Location</label>
+                <select asp-for="Venue" class="form-control" id="venueSelector">
+                    <option value="">Venue Type</option>
+                    <option value="Online">Online</option>
+                    <option value="Offline">Offline</option>
+                </select>
+                <span asp-validation-for="Venue" class="danger"></span>
+            </div>
+         </div>
+    </div>
+
+    @* Venue *@
+    <div class="main-container venue">
+        <div class="heading">Venue Details</div>
+        <div class="form-grid2">
+            <div class="form-group">
+                <label asp-for="VenueName"></label>
+                <input asp-for="VenueName" class="form-control" />
+                <span asp-validation-for="VenueName" class="danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Address"></label>
+                <textarea asp-for="Address" class="form-control"></textarea>
+                <span asp-validation-for="Address" class="danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Environment"></label>
+                <select asp-for="Environment" class="form-control">
+                    <option value="">Environment</option>
+                    <option value="Indoor">Indoor</option>
+                    <option value="Outdoor">Outdoor</option>
+                </select>
+                <span asp-validation-for="Environment" class="danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Capacity"></label>
+                <input asp-for="Capacity" type="number" class="form-control" />
+                <span asp-validation-for="Capacity" class="danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Accessibility"></label>
+                <textarea asp-for="Accessibility" class="form-control" placeholder="Ramps, lifts, parking, restroom, etc."></textarea>
+            </div>
+        </div>
+    </div>
+
+    @* Tickets *@
+    <div class="main-container ticketing-section">
+        <div class="heading">Registration & Ticketing</div>
+        <div class="form-grid2">
+            <!-- IsPaid -->
+            <div class="form-group">
+                <label>Is the event Free or Paid?</label>
+                <div class="form-checks">
+                    <div class="form-radio">
+                        <input asp-for="IsPaid" type="radio" value="Free" id="free" />
+                        <label for="free">Free</label>
+                    </div>
+                    <div class="form-radio">
+                        <input asp-for="IsPaid" type="radio" value="Paid" id="paid" />
+                        <label for="paid">Paid</label>
+                    </div>
+                </div>
+                <span asp-validation-for="IsPaid" class="danger"></span>
+            </div>
+
+            <!-- TicketPricing -->
+            <div class="form-group paid-only" style="@(Model.IsPaid == "Paid" ? "" : "display: none;")">
+                <label asp-for="TicketPricing">Ticket Pricing</label>
+                <textarea asp-for="TicketPricing" class="form-control" placeholder="e.g., VIP - ₹999, General - ₹499"></textarea>
+                <span asp-validation-for="TicketPricing" class="danger"></span>
+            </div>
+
+            <!-- UPI ID -->
+            <div class="form-group paid-only" style="@(Model.IsPaid == "Paid" ? "" : "display: none;")">
+                <label asp-for="Payment">UPI ID</label>
+                <input asp-for="Payment" class="form-control" />
+                <span asp-validation-for="Payment" class="danger"></span>
+            </div>
+
+            <!-- MaxAttendees -->
+            <div class="form-group">
+                <label asp-for="MaxAttendees">Maximum Attendees</label>
+                <input asp-for="MaxAttendees" type="number" class="form-control" min="1" />
+                <span asp-validation-for="MaxAttendees" class="danger"></span>
+            </div>
+
+            <!-- RegistrationDeadline -->
+            @{
+                var maxDeadline = Model?.DateTime?.AddMinutes(-1).ToString("yyyy-MM-ddTHH:mm");
+            }
+
+            <div class="form-group">
+                <label asp-for="RegistrationDeadline">Registration Deadline</label>
+                <input asp-for="RegistrationDeadline" type="datetime-local" class="form-control" max="@maxDeadline" />
+                <span asp-validation-for="RegistrationDeadline" class="danger"></span>
+            </div>
+
+            <!-- CancellationPolicy -->
+            <div class="form-group paid-only" style="@(Model.IsPaid == "Paid" ? "" : "display: none;")>
+                <label asp-for="CancellationPolicy">Cancellation Policy</label>
+                <textarea asp-for="CancellationPolicy" class="form-control"></textarea>
+                <span asp-validation-for="CancellationPolicy" class="danger"></span>
+            </div>
+        </div>
+    </div>
+
+    @* Program and schedule *@
+    <div class="main-container">
+        <div class="heading">Program Schedule</div>
+        <div class="form-grid2">
+            <div class="form-group">
+                <label asp-for="Agenda">Agenda / Timetable</label>
+                <textarea asp-for="Agenda" class="form-control" placeholder="E.g., 10:00 AM - Opening Ceremony"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Activities">Activities or Sessions</label>
+                <textarea asp-for="Activities" class="form-control" placeholder="E.g., Panel Discussion, Workshop, etc."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Speakers">Speakers / Hosts / Performers</label>
+                <textarea asp-for="Speakers" class="form-control" placeholder="E.g., John Doe - Keynote Speaker"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Breaks">Breaks / Meals / Entertainment</label>
+                <textarea asp-for="Breaks" class="form-control" placeholder="E.g., 1:00 PM - Lunch Break"></textarea>
+            </div>
+        </div>
+    </div>
+
+    @* promotion *@
+    <div class="main-container">
+        <div class="heading">Promotion & Communication</div>
+        <div class="form-grid3">
+
+            <div class="form-promo">
+                <label class="sub">Event Banner or Poster</label>
+                <div class="subheading2">Click the image to change banner</div>
+                <img id="bannerPreview"
+                     src="@(!string.IsNullOrEmpty(Model.Banner) ? Model.Banner : Url.Content("/images/Home2.jpg"))"
+                     class="bannerImage rounded-full"
+                     alt="Event Banner"
+                     onclick="$('#bannerInput').click();" />
+
+                <input asp-for="BannerFile" type="file" id="bannerInput" accept="image/*" style="display: none;" />
+
+                <span asp-validation-for="BannerFile" class="danger"></span>
+            </div>
+
+            <div class="form-promo2">
+                <div class="form-group">
+                    <label asp-for="Platforms">Marketing Platforms</label>
+                    <input asp-for="Platforms" class="form-control" placeholder="E.g., Instagram, Email, WhatsApp" />
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Audience">Target Audience</label>
+                    <textarea asp-for="Audience" class="form-control" placeholder="E.g., Students, Working Professionals, Families"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Sponsors">Partners or Sponsors</label>
+                    <textarea asp-for="Sponsors" class="form-control" placeholder="E.g., ABC Pvt Ltd, Local Media Partner"></textarea>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    @* Technical *@
+    <div class="main-container">
+        <div class="heading">Technical Requirements</div>
+        <div class="form-grid">
+            <div class="form-tech">
+                <input asp-for="SoundSystem" type="checkbox" class="form-check-input" />
+                <label asp-for="SoundSystem">Microphones, Speakers, and Sound System</label>
+            </div>
+
+            <div class="form-tech">
+                <input asp-for="Projection" type="checkbox" class="form-check-input" />
+                <label asp-for="Projection">Projectors, Screens, LED Walls</label>
+            </div>
+
+            <div class="form-tech">
+                <input asp-for="LiveStreaming" type="checkbox" class="form-check-input" />
+                <label asp-for="LiveStreaming">Live Streaming Setup (if hybrid/virtual)</label>
+            </div>
+
+            <div class="form-tech">
+                <input asp-for="Internet" type="checkbox" class="form-check-input" />
+                <label asp-for="Internet">Internet / Wi-Fi Needs</label>
+            </div>
+
+            <div class="form-tech">
+                <input asp-for="PowerBackup" type="checkbox" class="form-check-input" />
+                <label asp-for="PowerBackup">Power Backup</label>
+            </div>
+        </div>
+    </div>
+
+    @* staffs *@
+    <div class="main-container">
+        <div class="heading">Staffing & Management</div>
+        <div class="form-grid">
+
+            <div class="form-tech">
+                <input asp-for="Volunteers" type="checkbox" class="form-check-input" />
+                <label asp-for="Volunteers">Volunteers / Support Staff</label>
+            </div>
+
+            <div class="form-tech">
+                <input asp-for="Security" type="checkbox" class="form-check-input" />
+                <label asp-for="Security">Security Arrangements</label>
+            </div>
+
+            <div class="form-tech">
+                <input asp-for="Coordinators" type="checkbox" class="form-check-input" />
+                <label asp-for="Coordinators">Event Coordinators</label>
+            </div>
+
+            <div class="form-tech">
+                <input asp-for="Medical" type="checkbox" class="form-check-input" />
+                <label asp-for="Medical">Medical / Emergency Support</label>
+            </div>
+
+        </div>
+    </div>
+
+    @* catering *@
+    <div class="main-container venue">
+        <div class="heading">Catering</div>
+        <div class="form-grid">
+
+            <div class="form-group">
+                <div class="form-tech">
+                    <input asp-for="Veg" type="checkbox" id="Veg" />
+                    <label for="Veg">Vegetarian</label>
+                </div>
+                <div class="form-tech">
+                    <input asp-for="NonVeg" type="checkbox" id="NonVeg" />
+                    <label for="NonVeg">Non-Vegetarian</label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="menu">Food & Beverage Menu</label>
+                <textarea asp-for="Menu" id="menu" placeholder="E.g., Snacks, Soft Drinks, Full Course" class="form-control"></textarea>
+                <span asp-validation-for="Menu" class="danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label for="servingStyle">Serving Style</label>
+                <select asp-for="ServingStyle" id="servingStyle" class="form-control">
+                    <option value="">Select Serving Style</option>
+                    <option value="Buffet">Buffet</option>
+                    <option value="Table">Table Service</option>
+                </select>
+                <span asp-validation-for="ServingStyle" class="danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label for="guestCount">Number of Guests to be Served</label>
+                <input asp-for="GuestCount" type="number" min="1" id="guestCount" placeholder="Enter number of guests" class="form-control" />
+                <span asp-validation-for="GuestCount" class="danger"></span>
+            </div>
+
+        </div>
+    </div>
+
+    @* post event *@
+    <div class="main-container">
+        <div class="heading">Post-Event Activities</div>
+
+        <div class="form-grid">
+            <div class="form-tech">
+                <input asp-for="Feedback" type="checkbox" id="feedback" />
+                <label for="feedback">Feedback Collection</label>
+            </div>
+
+            <div class="form-tech">
+                <input asp-for="Media" type="checkbox" id="media" />
+                <label for="media">Photos/Videos of the Event</label>
+            </div>
+
+            <div class="form-tech">
+                <input asp-for="Report" type="checkbox" id="report" />
+                <label for="report">Reports/Analytics</label>
+            </div>
+
+            <div class="form-tech">
+                <input asp-for="Thanks" type="checkbox" id="thanks" />
+                <label for="thanks">Thank You Notes to Attendees</label>
+            </div>
+        </div>
+    </div>
+
+    @* Message *@
+    <div class="main-container">
+        <div class="form-full">
+            <div class="heading">Additional Message</div>
+            <textarea asp-for="Message" id="Message" rows="6" placeholder="Optional..." class="form-control2"></textarea>
+        </div>
+    </div>
+
+    @* Button *@
+    <div class="btn">
+        <button type="submit">Create</button>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            // Show/hide paid-only fields
+            function togglePaidFields() {
+                const selected = $('input[name="IsPaid"]:checked').val();
+                if (selected === 'Paid') {
+                    $('.paid-only').show();
+                } else {
+                    $('.paid-only').hide();
+                }
+            }
+
+            togglePaidFields();
+            $('input[name="IsPaid"]').on('change', togglePaidFields);
+
+            // Live banner preview
+            $('#bannerInput').on('change', function () {
+                const input = this;
+                if (input.files && input.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        $('#bannerPreview').attr('src', e.target.result);
+                    };
+                    reader.readAsDataURL(input.files[0]);
+                }
+            });
+
+            // Show/hide venue section based on venue type
+            function toggleVenueSection() {
+                const venueValue = $('#venueSelector').val();
+                if (venueValue === 'Online') {
+                    $('.venue').hide();
+                } else {
+                    $('.venue').show();
+                }
+            }
+
+            toggleVenueSection();
+            $('#venueSelector').on('change', toggleVenueSection);
+
+            // Show/hide ticketing section based on event type
+            function toggleTicketingSection() {
+                const selectedType = $('#typeSelector').val();
+                if (selectedType === 'Organizer') {
+                    $('.ticketing-section').hide(); 
+                } else {
+                    $('.ticketing-section').show();
+                }
+            }
+
+            toggleTicketingSection();
+            $('#typeSelector').on('change', toggleTicketingSection);
+        });
+    </script>
+}
+
+
+

@@ -1,0 +1,120 @@
+﻿@model Event_Management.Models.Tickets
+
+@{
+    ViewData["Title"] = "Users";
+    Layout = "~/Views/Shared/Admin.cshtml";
+    var ticketId = ViewData["TicketId"] as string;
+    var eventId = ViewData["EventId"] as string;
+    var eventName = ViewData["EventName"] as string;
+    var organizerName = ViewData["OrganizerName"] as string;
+    var buyerName = ViewData["BuyerName"] as string;
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin.css" />
+}
+
+<section>
+
+    @* Table *@
+    <div class="table-container">
+
+        <div class="filters">
+
+            <form method="get" asp-controller="Admin" asp-action="Ticket" class="search-form1" enctype="multipart/form-data">
+
+                @* Ticket Id *@
+                <input type="text" name="ticketId" placeholder="Search by Ticket Id..." value="@ticketId" />
+
+                @* Event Id *@
+                <input type="text" name="eventId" placeholder="Search by Event Id..." value="@eventId" />
+
+                @* Event name *@
+                <input type="text" name="eventName" placeholder="Search by Event Name..." value="@eventName" />
+
+                @* Organizer Search *@
+                <input type="text" name="organizerName" placeholder="Search by Organizer Name..." value="@organizerName" />
+
+                @* Buyer Search *@
+                <input type="text" name="buyerName" placeholder="Search by  Buyer Name..." value="@buyerName" />
+
+                <div class="buttons1">
+                    @* submit *@
+                    <button type="submit" class="submit">
+                        <img src="@Url.Content("~/images/Search.svg")" alt="Search" />
+                        Search
+                    </button>
+
+                    @* reset *@
+                    <a asp-controller="Admin" asp-action="Ticket" class="reset">
+                        <img src="@Url.Content("~/images/Reset.svg")" alt="Search" />
+                        Reset
+                    </a>
+                </div>
+
+            </form>
+        </div>
+
+        <div class="tabless">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>S.No</th>
+                        <th>Ticket Id</th>
+                        <th>Event | Organizer</th>
+                        <th>Purchased By</th>
+                        <th>Purchased Date</th>
+                        <th>Type</th>
+                        <th>Quantity</th>
+                        <th>Ticket Price</th>
+                        <th>Subtotal</th>
+                        <th>Booking Fee</th>
+                        <th>Total Price</th>
+                    </tr>
+                </thead>
+                    <tbody>
+                        @{
+                            var ticketsList = (List<Event_Management.Models.Tickets>)ViewBag.TicketList;
+                        }
+
+                        @if (ticketsList.Any())
+                        {
+                            var index = 1;
+                            foreach (var tic in ticketsList)
+                            {
+                                <tr>
+                                    <td>@index</td>
+                                    <td>@tic.Id</td>
+                                    <td>@tic.Event.Name | @tic.Event.User.Name</td>
+                                    <td>@tic.User.Name</td>
+                                    <td>@tic.PurchaseDate.ToString("MMM dd yyyy | hh:mm tt")</td>
+                                    <td>@tic.Type</td>
+                                    <td>@tic.Quantity</td>
+                                    <td>@tic.TicketPrice</td>
+                                    <td>@(@tic.Quantity * @tic.TicketPrice)</td>
+                                    <td>@tic.BookingFee</td>
+                                    <td>@tic.TotalPrice</td>
+                                </tr>
+                                index++;
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="11" class="no-data">
+                                    No Ticket found.
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+
+            </table>
+        </div>
+
+    </div>
+
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

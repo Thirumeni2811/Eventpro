@@ -1,0 +1,42 @@
+﻿@model Event_Management.Models.Login
+
+@{
+    ViewData["Title"] = "Admin Login";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/form.css" />
+}
+
+<form asp-action="Login" asp-controller="Admin" method="post" class="form-container">
+    @Html.AntiForgeryToken()
+
+    <div class="heading">Login</div>
+    <div class="subheading">Welcome back! Please sign in as Admin</div>
+
+    <div class="form-grid">
+        @Html.ValidationSummary(true, "", new { @class = "danger" })
+
+        <div class="form-group">
+            <label asp-for="Email">Email Address</label>
+            <input asp-for="Email" class="form-control" />
+            <span asp-validation-for="Email" class="danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Password">Password</label>
+            <input asp-for="Password" class="form-control" type="password" />
+            <span asp-validation-for="Password" class="danger"></span>
+        </div>
+    </div>
+
+    <div class="btnn">
+        <button type="submit">Login</button>
+    </div>
+</form>
+
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

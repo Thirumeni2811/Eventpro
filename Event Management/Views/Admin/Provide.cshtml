@@ -1,0 +1,170 @@
+﻿@model Event_Management.Models.Provide
+
+@{
+    ViewData["Title"] = "Provide";
+    Layout = "~/Views/Shared/Admin.cshtml";
+    var searchValue = ViewData["TitleQuery"] as string;
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin.css" />
+}
+
+<section>
+
+    @* Form *@
+    <form asp-action="Provide" asp-controller="Admin" method="post" enctype="multipart/form-data" class="form-container">
+        <div class="formm">
+            <input asp-for="Id" type="hidden" />
+            <div>
+                <p class="img-title">Image</p>
+                @if (string.IsNullOrEmpty(Model?.Img))
+                {
+                    <input asp-for="BannerFile" type="file" id="ImageFile" accept="image/*" class="file-input" />
+                }
+                else
+                {
+                    <label for="ImageFile">
+                        <div class="image-cont">
+                            <img id="previewImage"
+                                 src="@Model.Img"
+                                 alt="Image"
+                                 class="data-img" />
+                        </div>
+                    </label>
+                    <input asp-for="BannerFile" type="file" id="ImageFile" accept="image/*" style="display: none;" />
+
+                    <input type="hidden" asp-for="Img" />
+                }
+
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Title">Title</label>
+                <input asp-for="Title" class="form-control" />
+                <span asp-validation-for="Title" class="danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Description">Description</label>
+                <textarea asp-for="Description" class="form-control auto-resize"></textarea>
+                <span asp-validation-for="Description" class="danger"></span>
+            </div>
+        </div>
+
+        <div class="sub-button">
+            <button type="submit" class="submit">
+                @(Model.Id != Guid.Empty ? "Update" : "Add")
+            </button>
+        </div>
+    </form>
+
+
+    @* Table *@
+    <div class="table-container">
+
+        <div class="filters">
+
+            <form method="get" asp-controller="Admin" asp-action="Provide" class="search-form" enctype="multipart/form-data">
+
+                @* Title Search *@
+                <input type="text" name="title" placeholder="Search by Title..." value="@searchValue" />
+
+                <div class="buttons">
+                    @* submit *@
+                    <button type="submit" class="submit">
+                        <img src="@Url.Content("~/images/Search.svg")" alt="Search" />
+                        Search
+                    </button>
+
+                    @* reset *@
+                    <a asp-controller="Admin" asp-action="Provide" class="reset">
+                        <img src="@Url.Content("~/images/Reset.svg")" alt="Search" />
+                        Reset
+                    </a>
+                </div>
+
+            </form>
+        </div>
+
+        <div class="tabless">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>S.No</th>
+                        <th>Image</th>
+                        <th>Title</th>
+                        <th>Description</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        var list = (List<Event_Management.Models.Provide>)ViewBag.ProvideList;
+                        if (list != null && list.Any())
+                        {
+                            var index = 1;
+                            foreach (var provide in list)
+                            {
+                                <tr>
+                                    <td>@index</td>
+                                    <td>
+                                        <img src="@provide.Img" alt="@provide.Title" class="data-image" />
+                                    </td>
+                                    <td>@provide.Title</td>
+                                    <td class="description">@provide.Description</td>
+                                    <td>
+                                        <a asp-action="Provide" asp-controller="Admin" asp-route-id="@provide.Id">
+                                            <img src="@Url.Content("~/images/Edit.svg")" alt="Edit" class="action-image" />
+                                        </a>
+                                        <form asp-action="DeleteProvide" asp-controller="Admin" asp-route-id="@provide.Id" method="post" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this provide?');">
+                                            <button type="submit" style="border:none; background:none; padding:0; cursor:pointer;">
+                                                <img src="@Url.Content("~/images/Delete.svg")" alt="Delete" class="action-image" />
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                index++;
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="5" class="no-data">
+                                    No records found.
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+
+            </table>
+        </div>
+
+    </div>
+
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(function () {
+            $('#ImageFile').on('change', function (e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        $('#previewImage').attr('src', e.target.result);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            $('.auto-resize').on('input', function() {
+                this.style.height = 'auto';
+                this.style.height = (this.scrollHeight) + 'px';
+            });
+        });
+    </script>
+}

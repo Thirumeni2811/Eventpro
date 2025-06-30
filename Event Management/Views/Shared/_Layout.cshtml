@@ -1,0 +1,31 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Event Pro</title>
+
+    <!-- Global styles -->
+    <link rel="stylesheet" href="~/css/layout.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/Event_Management.styles.css" asp-append-version="true" />
+
+    <!-- Page-specific styles -->
+    @RenderSection("Styles", required: false)
+</head>
+<body>
+    <header>
+        <div class="layout">
+            <a class="logoo" asp-controller="Home" asp-action="Index">EVENTPRO</a>
+        </div>
+    </header>
+
+    <div class="container">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <!-- Page-specific scripts -->
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

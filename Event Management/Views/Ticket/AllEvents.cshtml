@@ -1,0 +1,139 @@
+﻿@model Event_Management.Models.EventsView
+
+@{
+    ViewData["Title"] = "All Events"; 
+    Layout = "~/Views/Shared/User.cshtml";
+    var org = Model.User;
+    var searchValue = ViewData["SearchQuery"] as string;
+    var selectedType = ViewData["TypeFilter"] as string;
+    var selectedVenue = ViewData["VenueFilter"] as string;
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/org.css" />
+}
+
+<section class="main">
+
+    <div class="filters">
+
+        <form method="get" asp-controller="Ticket" asp-action="AllEvents" class="search-form2">
+
+                @* Event Name Search *@
+                <input type="text" name="eventName" placeholder="Search by Event name..." value="@searchValue" />
+
+                @* Type Dropdown *@
+                <select name="type" class="status-dropdown">
+                    <option value="">Type</option>
+
+                    @if (selectedType == "Free")
+                    {
+                        <option value="Free" selected>Free</option>
+                    }
+                    else
+                    {
+                        <option value="Free">Free</option>
+                    }
+
+                    @if (selectedType == "Paid")
+                    {
+                    <option value="Paid" selected>Paid</option>
+                    }
+                    else
+                    {
+                        <option value="Paid">Paid</option>
+                    }
+                </select>
+
+                @* Venye Dropdown *@
+                <select name="venue" class="status-dropdown">
+                    <option value="">Venue</option>
+
+                    @if (selectedVenue == "Online")
+                    {
+                        <option value="Online" selected>Online</option>
+                    }
+                    else
+                    {
+                        <option value="Online">Online</option>
+                    }
+
+                    @if (selectedVenue == "Offline")
+                    {
+                        <option value="Offline" selected>Offline</option>
+                    }
+                    else
+                    {
+                        <option value="Offline">Offline</option>
+                    }
+                </select>
+
+                <div class="buttons">
+                    @* submit *@
+                    <button type="submit" class="submit">
+                        <img src="@Url.Content("~/images/Search.svg")" alt="Search" />
+                        Search
+                    </button>
+
+                    @* reset *@
+                <a asp-controller="Ticket" asp-action="AllEvents" class="reset">
+                        <img src="@Url.Content("~/images/Reset.svg")" alt="Search" />
+                        Reset
+                    </a>
+                </div>
+
+        </form>
+    </div>
+
+    <div class="full-grid2">
+        @if (Model.Events != null && Model.Events.Any())
+        {
+            foreach (var item in Model.Events)
+            {
+                <a class="grid-cont2" asp-controller="Ticket" asp-action="Event" asp-route-id="@item.Id">
+                    <img src="@item.Banner" alt="@item.Name" width="200" />
+                    <div class="galCont2">
+                        <div class="event-title">
+                            @item.Name
+                        </div>
+                        <div class="prev">
+                            <img src="@Url.Content("~/images/Bookmark2.svg")" alt="Theme" />
+                            @item.Theme
+                        </div>
+                        <div class="prev">
+                            <img src="@Url.Content("~/images/Calender2.svg")" alt="Timing" />
+                            @(
+                                                item.DateTime.HasValue == true
+                                                ? item.DateTime.Value.ToString("ddd, dd MMM | h tt") + " onwards"
+                                                : "-"
+                                                )
+
+                        </div>
+                        <div class="prev">
+                            <img src="@Url.Content("~/images/Location2.svg")" alt="Location" />
+                            @if (item.Venue == "Online")
+                            {
+                                <span>Online</span>
+                            }
+                            else
+                            {
+                                <span>
+                                    @(item.VenueName ?? "-"), @(item.Address ?? "-")
+                                </span>
+                            }
+                        </div>
+                        <div class="prev">
+                            <img src="@Url.Content("~/images/Invitation2.svg")" alt="Theme" />
+                            @item.IsPaid
+                        </div>
+                    </div>
+                </a>
+            }
+        }
+        else
+        {
+            <p class="no-event">No events found!!!</p>
+        }
+    </div>
+
+</section>

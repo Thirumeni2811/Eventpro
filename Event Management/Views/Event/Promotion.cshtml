@@ -1,0 +1,52 @@
+﻿@model Event_Management.Models.Events
+
+@{
+    ViewData["Title"] = "Promotion and Communication";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/create.css" />
+}
+
+<form asp-action="Promotion" asp-controller="Event" method="post" enctype="multipart/form-data" class="form-container">
+    @Html.AntiForgeryToken()
+
+    <div class="heading">Promotion & Communication</div>
+    <div class="subheading">Share your event visuals and marketing plans</div>
+
+    <div class="form-grid">
+
+        <div class="form-group">
+            <label asp-for="BannerFile">Event Banner or Poster</label>
+            <input asp-for="BannerFile" type="file" accept="image/*" class="form-control" />
+            <span asp-validation-for="BannerFile" class="danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Platforms">Marketing Platforms</label>
+            <input asp-for="Platforms" class="form-control" placeholder="E.g., Instagram, Email, WhatsApp" />
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Audience">Target Audience</label>
+            <textarea asp-for="Audience" class="form-control" placeholder="E.g., Students, Working Professionals, Families"></textarea>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Sponsors">Partners or Sponsors</label>
+            <textarea asp-for="Sponsors" class="form-control" placeholder="E.g., ABC Pvt Ltd, Local Media Partner"></textarea>
+        </div>
+
+    </div>
+
+    <div class="btn">
+        <button type="button" class="back" onclick="window.history.back()">Back</button>
+        <button type="submit">Next</button>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/tickets.js"></script>
+}

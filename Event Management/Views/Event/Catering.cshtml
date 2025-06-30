@@ -1,0 +1,66 @@
+﻿@model Event_Management.Models.Events
+
+@{
+    ViewData["Title"] = "Catering";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/create.css" />
+}
+
+<form asp-action="Catering" asp-controller="Event" method="post" class="form-container">
+    @Html.AntiForgeryToken()
+
+    <div class="heading">Catering</div>
+    <div class="subheading">Specify catering preferences and guest serving details</div>
+
+    <div class="form-grid">
+
+        <div class="form-group">
+            <label>Options Available</label>
+            <div class="form-opt">
+                <div class="form-tech">
+                    <input asp-for="Veg" type="checkbox" id="Veg" />
+                    <label for="Veg">Vegetarian</label>
+                </div>
+                <div class="form-tech">
+                    <input asp-for="NonVeg" type="checkbox" id="NonVeg" />
+                    <label for="NonVeg">Non-Vegetarian</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="menu">Food & Beverage Menu</label>
+            <textarea asp-for="Menu" id="menu" placeholder="E.g., Snacks, Soft Drinks, Full Course" class="form-control"></textarea>
+            <span asp-validation-for="Menu" class="danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label for="servingStyle">Serving Style</label>
+            <select asp-for="ServingStyle" id="servingStyle" class="form-control">
+                <option value="">Select Serving Style</option>
+                <option value="Buffet">Buffet</option>
+                <option value="Table">Table Service</option>
+            </select>
+            <span asp-validation-for="ServingStyle" class="danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label for="guestCount">Number of Guests to be Served</label>
+            <input asp-for="GuestCount" type="number" min="1" id="guestCount" placeholder="Enter number of guests" class="form-control" />
+            <span asp-validation-for="GuestCount" class="danger"></span>
+        </div>
+
+    </div>
+
+    <div class="btn">
+        <button type="button" class="back" onclick="window.history.back()">Back</button>
+        <button type="submit">Next</button>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

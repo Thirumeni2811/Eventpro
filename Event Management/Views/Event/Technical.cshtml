@@ -1,0 +1,53 @@
+﻿@model Event_Management.Models.Events
+
+@{
+    ViewData["Title"] = "Technical Requirements";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/form.css" />
+}
+
+<form asp-action="Technical" asp-controller="Event" method="post" class="form-container">
+    @Html.AntiForgeryToken()
+
+    <div class="heading">Technical Requirements</div>
+    <div class="subheading">Specify the equipment and tech support you need</div>
+
+    <div class="form-grid">
+        <div class="form-tech">
+            <input asp-for="SoundSystem" type="checkbox" class="form-check-input" />
+            <label asp-for="SoundSystem">Microphones, Speakers, and Sound System</label>
+        </div>
+
+        <div class="form-tech">
+            <input asp-for="Projection" type="checkbox" class="form-check-input" />
+            <label asp-for="Projection">Projectors, Screens, LED Walls</label>
+        </div>
+
+        <div class="form-tech">
+            <input asp-for="LiveStreaming" type="checkbox" class="form-check-input" />
+            <label asp-for="LiveStreaming">Live Streaming Setup (if hybrid/virtual)</label>
+        </div>
+
+        <div class="form-tech">
+            <input asp-for="Internet" type="checkbox" class="form-check-input" />
+            <label asp-for="Internet">Internet / Wi-Fi Needs</label>
+        </div>
+
+        <div class="form-tech">
+            <input asp-for="PowerBackup" type="checkbox" class="form-check-input" />
+            <label asp-for="PowerBackup">Power Backup</label>
+        </div>
+    </div>
+
+    <div class="btn">
+        <button type="button" class="back" onclick="window.history.back()">Back</button>
+        <button type="submit">Next</button>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

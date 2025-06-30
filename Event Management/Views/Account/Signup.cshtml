@@ -1,0 +1,67 @@
+﻿@model Event_Management.Models.Users
+
+@{
+    ViewData["Title"] = "User | Profile setup";
+    Layout = "/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/create.css" />
+}
+
+<form asp-action="Signup" asp-controller="Account" method="post" class="form-container">
+    @Html.AntiForgeryToken()
+
+    <div class="heading">User Profile</div>
+    <div class="subheading">Please provide your personal details below</div>
+    <div class="switch-profile">
+        Want to host events? <a asp-controller="Account" asp-action="Create" class="link">Sign up as an Organizer</a>
+    </div>
+
+    <div class="form-grid">
+        <div class="form-group">
+            <label asp-for="Name">Name</label>
+            <input asp-for="Name" class="form-control" />
+            <span asp-validation-for="Name" class="danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Email">Email Address</label>
+            <input asp-for="Email" class="form-control" />
+            <span asp-validation-for="Email" class="danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="PhoneNo">Phone Number</label>
+            <input asp-for="PhoneNo" class="form-control" />
+            <span asp-validation-for="PhoneNo" class="danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Password">Password</label>
+            <input asp-for="Password" class="form-control" />
+            <span asp-validation-for="Password" class="danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="CPassword">Confirm Password</label>
+            <input asp-for="CPassword" class="form-control" />
+            <span asp-validation-for="CPassword" class="danger"></span>
+        </div>
+
+    </div>
+
+    <div class="btnn">
+        <button type="submit">Create</button>
+        <div>
+            Already have a User account ?
+            <span>
+                <a asp-controller="Account" asp-action="UserLogin" class="create">Login</a>
+            </span>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

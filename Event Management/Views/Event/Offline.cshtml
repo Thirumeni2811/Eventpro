@@ -1,0 +1,63 @@
+﻿@model Event_Management.Models.Events
+
+@{
+    ViewData["Title"] = "Venue Detail";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/create.css" />
+}
+
+<form asp-action="Offline" asp-controller="Event" method="post" class="form-container">
+    @Html.AntiForgeryToken()
+
+    <div class="heading">Venue Details</div>
+    <div class="subheading">Add venue details for offline meets</div>
+
+    <div class="form-grid">
+        <div class="form-group">
+            <label asp-for="VenueName"></label>
+            <input asp-for="VenueName" class="form-control" />
+            <span asp-validation-for="VenueName" class="danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Address"></label>
+            <textarea asp-for="Address" class="form-control"></textarea>
+            <span asp-validation-for="Address" class="danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Environment"></label>
+            <select asp-for="Environment" class="form-control">
+                <option value="">Environment</option>
+                <option value="Indoor">Indoor</option>
+                <option value="Outdoor">Outdoor</option>
+            </select>
+            <span asp-validation-for="Environment" class="danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Capacity"></label>
+            <input asp-for="Capacity" type="number" class="form-control" />
+            <span asp-validation-for="Capacity" class="danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Accessibility"></label>
+            <textarea asp-for="Accessibility" class="form-control" placeholder="Ramps, lifts, parking, restroom, etc."></textarea>
+            <span asp-validation-for="Accessibility" class="danger"></span>
+        </div>
+    </div>
+
+    <div class="btn">
+        <button type="button" class="back" onclick="window.history.back()">Back</button>
+        <button type="submit">Next</button>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
+

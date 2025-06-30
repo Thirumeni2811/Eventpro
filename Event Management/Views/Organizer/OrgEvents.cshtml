@@ -1,0 +1,90 @@
+﻿@model Event_Management.Models.EventsView
+
+@{
+    ViewData["Title"] = Model.User?.Name ?? "Event Information";
+    Layout = "~/Views/Shared/User.cshtml";
+    var data = Model.User;
+    var searchValue = ViewData["SearchQuery"] as string;
+    var selectedStatus = ViewData["StatusFilter"] as string;
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/org.css" />
+}
+
+<section class="main">
+
+    <div class="filters">
+
+        <form method="get" asp-controller="Organizer" asp-action="OrgEvents" class="search-form">
+
+                @* Event Name Search *@
+                <input type="text" name="eventName" placeholder="Search by Event name..." value="@searchValue" />
+
+                @* Status Dropdown *@
+                <select name="status" class="status-dropdown">
+                    <option value="">Status</option>
+
+                    @if (selectedStatus == "Upcoming")
+                    {
+                        <option value="Upcoming" selected>Upcoming</option>
+                    }
+                    else
+                    {
+                        <option value="Upcoming">Upcoming</option>
+                    }
+
+                    @if (selectedStatus == "Completed")
+                    {
+                        <option value="Completed" selected>Completed</option>
+                    }
+                    else
+                    {
+                        <option value="Completed">Completed</option>
+                    }
+                </select>
+
+                <div class="buttons">
+                    @* submit *@
+                    <button type="submit" class="submit">
+                        <img src="@Url.Content("~/images/Search.svg")" alt="Search" />
+                        Search
+                    </button>
+
+                    @* reset *@
+                <a asp-controller="Organizer" asp-action="OrgEvents" class="reset">
+                        <img src="@Url.Content("~/images/Reset.svg")" alt="Search" />
+                        Reset
+                    </a>
+                </div>
+
+        </form>
+    </div>
+
+    <div class="full-grid">
+        @if (Model.Events != null && Model.Events.Any())
+        {
+            foreach (var item in Model.Events)
+            {
+                <a class="grid-cont" asp-controller="Organizer" asp-action="Event" asp-route-id="@item.Id">
+                    <img src="@item.Banner" alt="@item.Name" width="200" />
+                    <div class="galCont">
+                        <p class="payee">@item.Type</p>
+                        <h3>@item.Name</h3>
+                        <p class="description">@item.Description</p>
+                        @* <div class="orgCont">
+                            <p class="payee @(item.Status == "Upcoming" ? "upcoming" : item.Status == "Completed" ? "completed" : "")">
+                                @item.Status
+                            </p>
+                        </div> *@
+                    </div>
+                </a>
+            }
+        }
+        else
+        {
+            <p class="no-event">No events found!!!</p>
+        }
+    </div>
+
+</section>

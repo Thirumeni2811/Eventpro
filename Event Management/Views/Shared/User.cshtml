@@ -1,0 +1,84 @@
+﻿@model Event_Management.Models.EventsView
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+
+    <!-- Global CSS -->
+    <link rel="stylesheet" href="~/css/organisation.css" asp-append-version="true" />
+
+    <!-- Page-specific styles -->
+    @RenderSection("Styles", required: false)
+</head>
+<body>
+    <link href="~/css/organisation.css" rel="stylesheet" />
+    <header>
+        <div class="layout">
+            <a class="logoo" asp-controller="Home" asp-action="Index">EVENTPRO</a>
+
+            <div class="Profile" id="profileToggle">
+                <div class="image-cont">
+                    <img src="@(string.IsNullOrEmpty(Model.User?.Image)
+                                          ? Url.Content("~/images/Acc2.png")
+                                          : Model.User.Image)"
+                         alt="Profile"
+                         class="profile-img" />
+                </div>
+                <h2 class="profile-name">@Model?.User?.Name</h2>
+
+                <div class="profile-menu" id="profileMenu">
+                    @if (Model.Role == "Organizer")
+                    {
+                        <a asp-controller="Account" asp-action="OrgUpdate">Update</a>
+                    }
+                    else if (Model.Role == "User")
+                    {
+                        <a asp-controller="Account" asp-action="UserUpdate">Update</a>
+                    }
+                    <a href="#" id="logoutTrigger">Logout</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <main role="main">
+            @RenderBody()
+        </main>
+    </div>
+
+    <!-- Logout Modal -->
+    @await Html.PartialAsync("Modal")
+
+    @RenderSection("Scripts", required: false)
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(function () {
+            $('#profileToggle').on('click', function (e) {
+                e.stopPropagation();
+                $('#profileMenu').fadeToggle(150);
+            });
+
+            $(document).on('click', function () {
+                $('#profileMenu').fadeOut(150);
+            });
+
+            // Show logout modal
+            $('#logoutTrigger').on('click', function (e) {
+                e.preventDefault();
+                $('#profileMenu').fadeOut(150);
+                $('#logoutModal').fadeIn();
+            });
+
+            // Cancel logout
+            $('#cancelLogout').on('click', function () {
+                $('#logoutModal').fadeOut();
+            });
+        });
+    </script>
+</body>
+</html>

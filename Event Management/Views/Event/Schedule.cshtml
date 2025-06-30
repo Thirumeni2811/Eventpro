@@ -1,0 +1,53 @@
+﻿@model Event_Management.Models.Events
+
+@{
+    ViewData["Title"] = "Program Schedule";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/create.css" />
+}
+
+<form asp-action="Schedule" asp-controller="Event" method="post" class="form-container">
+    @Html.AntiForgeryToken()
+
+    <div class="heading">Program Schedule</div>
+    <div class="subheading">Add event agenda and session details</div>
+
+    <div class="form-grid">
+        <div class="form-group">
+            <label asp-for="Agenda">Agenda / Timetable</label>
+            <textarea asp-for="Agenda" class="form-control" placeholder="E.g., 10:00 AM - Opening Ceremony, 11:00 AM - Panel Discussion"></textarea>
+            <span asp-validation-for="Agenda" class="danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Activities">Activities or Sessions</label>
+            <textarea asp-for="Activities" class="form-control" placeholder="E.g., Panel Discussion, Workshop, Networking Session"></textarea>
+            <span asp-validation-for="Activities" class="danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Speakers">Speakers / Hosts / Performers</label>
+            <textarea asp-for="Speakers" class="form-control" placeholder="E.g., John Doe - Keynote Speaker, Jane Smith - Panelist"></textarea>
+            <span asp-validation-for="Speakers" class="danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Breaks">Breaks / Meals / Entertainment</label>
+            <textarea asp-for="Breaks" class="form-control" placeholder="E.g., 1:00 PM - Lunch Break, 3:00 PM - Coffee Break"></textarea>
+            <span asp-validation-for="Breaks" class="danger"></span>
+        </div>
+
+    </div>
+
+    <div class="btn">
+        <button type="button" class="back" onclick="window.history.back()">Back</button>
+        <button type="submit">Next</button>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
