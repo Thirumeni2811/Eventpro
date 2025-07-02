@@ -9,12 +9,12 @@ namespace Event_Management.Controllers
     public class AdminController : Controller
     {
         private readonly AppDbContext _context;
-        private readonly JwtHelper _jwt;
+        //private readonly JwtHelper _jwt;
 
-        public AdminController(AppDbContext context, JwtHelper jwt)
+        public AdminController(AppDbContext context)
         {
             _context = context;
-            _jwt = jwt;
+            //_jwt = jwt;
         }
 
         // FUNCTION FOR ADMIN ACCESS
@@ -848,7 +848,8 @@ namespace Event_Management.Controllers
                 return RedirectToAction("Index", "Home");
             }
 
-            string token = _jwt.GenerateToken(user.Id.ToString(), user.Email);
+            //string token = _jwt.GenerateToken(user.Id.ToString(), user.Email);
+            string token = "wreiuo346tuyhj";
 
             HttpContext.Session.SetString("Token", token);
 

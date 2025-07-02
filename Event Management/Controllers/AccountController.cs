@@ -1,23 +1,24 @@
-﻿using Event_Management.Data;
-using Event_Management.Helpers;
-using Event_Management.Models;
+﻿using Event_Management.Helpers;
+using Eventpro.Domain.Models;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace Event_Management.Controllers
 {
     public class AccountController : Controller
     {
-        private readonly AppDbContext _context;
-        private readonly JwtHelper _jwt;
+        private readonly IUserService _userService;
 
-        public AccountController (AppDbContext context, JwtHelper jwt)
+        public AccountController (IUserService userService)
         {
-            _context = context;
-            _jwt = jwt;
+            _userService = userService;
         }
 
-        // GET: /create-profile
+        /*--------------------------------------
+                    C R E A T E
+        --------------------------------------*/
+
+        // O R G A N I Z E R
+
         [HttpGet]
         [Route("/create-profile")]
         public IActionResult Create()
@@ -25,12 +26,13 @@ namespace Event_Management.Controllers
             return View();
         }
 
-        // POST: /create-profile
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Route("/create-profile")]
         public async Task<IActionResult> Create(Users user)
         {
+            user.Role = "Organizer";
+
             if (string.IsNullOrWhiteSpace(user.Person))
                 ModelState.AddModelError("Person", "Contact person name is required.");
 
@@ -54,202 +56,36 @@ namespace Event_Management.Controllers
                 return View(user);
             }
 
-            if (await _context.Users.AnyAsync(u => u.Email.ToLower().Trim() == user.Email.ToLower().Trim()))
-            {
-                ModelState.AddModelError("Email", "Email already exists.");
-                return View(user);
-            }
-
             try
             {
-                user.Password = PasswordHelper.HashPassword(user.Password);
-                user.CPassword = null;
-                user.Role = "Organizer";
-                user.CreatedAt = DateTime.Now;
+                var result = await _userService.CreateUserProfileAsync(user);
 
-                await _context.Users.AddAsync(user);
-                await _context.SaveChangesAsync();
+                if (!result.Success)
+                {
+                    ModelState.AddModelError(string.Empty, result.Message);
+                    return View(user);
+                }
 
-                string token = _jwt.GenerateToken(user.Id.ToString(), user.Email);
-
-                Response.Cookies.Append("Token", token, new CookieOptions
+                Response.Cookies.Append("Token", result.Data.Token, new CookieOptions
                 {
                     HttpOnly = true,
-                    Expires = DateTimeOffset.Now.AddDays(7)
+                    Expires = DateTimeOffset.Now.AddDays(30)
                 });
 
-                TempData["SuccessMessage"] = "Profile created successfully!";
+                TempData["SuccessMessage"] = result.Message;
                 return RedirectToAction("Index", "Home");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error: {ex.Message}");
-                ModelState.AddModelError(string.Empty, "An error occurred. Please try again.");
+                Console.WriteLine($"Error creating profile: {ex.Message}");
+                ModelState.AddModelError(string.Empty, "An unexpected error occurred. Please try again.");
                 return View(user);
             }
         }
 
-        // GET: /org-login
-        [HttpGet]
-        [Route("/org-login")]
-        public IActionResult Login()
-        {
-            return View();
-        }
-
-        // POST: /org-login
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        [Route("/org-login")]
-        public async Task<IActionResult> Login(Login log)
-        {
-            if (!ModelState.IsValid)
-            {
-                return View(log);
-            }
-
-            try
-            {
-                var user = await _context.Users
-                    .FirstOrDefaultAsync(u => u.Email.ToLower().Trim() == log.Email.ToLower().Trim() && u.Role == "Organizer");
-
-                if (user == null)
-                {
-                    ModelState.AddModelError("Email", "Email does not exist as Organizer account.");
-                    return View(log);
-                }
-
-                if (!PasswordHelper.VerifyPassword(log.Password, user.Password))
-                {
-                    ModelState.AddModelError("Password", "Incorrect password.");
-                    return View(log);
-                }
-
-                string token = _jwt.GenerateToken(user.Id.ToString(), user.Email);
-
-                Response.Cookies.Append("Token", token, new CookieOptions
-                {
-                    HttpOnly = true,
-                    Expires = DateTimeOffset.Now.AddDays(7)
-                });
-
-                TempData["SuccessMessage"] = "Login successful!";
-                return RedirectToAction("Index", "Home");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Login Error: {ex.Message}");
-                ModelState.AddModelError(string.Empty, "An error occurred during login. Please try again.");
-                return View(log);
-            }
-        }
-
-        // GET: /update-org-profile
-        [HttpGet]
-        [Route("/update-org-profile")]
-        public async Task <IActionResult> OrgUpdate()
-        {
-            Guid userId;
-
-            try
-            {
-                userId = TokenHelper.GetIdFromToken(Request);
-            }
-            catch (Exception)
-            {
-                return RedirectToAction("Create", "Account");
-            }
-
-            var user = await _context.Users
-                .FirstOrDefaultAsync(o => o.Id == userId);
-
-            if (user == null)
-            {
-                return NotFound("User not found.");
-            }
-
-            // Clear password fields for editing
-            user.Password = string.Empty;
-            user.CPassword = string.Empty;
-
-            return View(user);
-        }
-
-        // POST: /update-org-profile
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        [Route("/update-org-profile")]
-        public async Task<IActionResult> OrgUpdate(Users model, IFormFile ImageFile)
-        {
-            Guid userId;
-
-            try
-            {
-                userId = TokenHelper.GetIdFromToken(Request);
-            }
-            catch
-            {
-                return RedirectToAction("Create", "Account");
-            }
-
-            var user = await _context.Users.FirstOrDefaultAsync(o => o.Id == userId);
-
-            if (user == null)
-            {
-                return NotFound("User not found.");
-            }
-
-            ModelState.Remove("Password");
-            ModelState.Remove("CPassword");
-            ModelState.Remove("ImageFile");
-            ModelState.Remove("Role");
-            ModelState.Remove("CreatedAt");
-
-            if (string.IsNullOrWhiteSpace(model.Person))
-                ModelState.AddModelError("Person", "Contact person name is required.");
-
-            if (string.IsNullOrWhiteSpace(model.Address))
-                ModelState.AddModelError("Address", "Address is required.");
-
-            if (!ModelState.IsValid)
-            {
-                return View(model);
-            }
-
-            user.Name = model.Name;
-            user.Person = model.Person;
-            user.Address = model.Address;
-            user.Email = model.Email;
-            user.PhoneNo = model.PhoneNo;
-            user.Website = model.Website;
-
-            if (ImageFile != null && ImageFile.Length > 0)
-            {
-                try
-                {
-                    var imagePath = await FileUploadHelper.SaveFileAsync(ImageFile, "user");
-                    user.Image = imagePath;
-                }
-                catch (Exception ex)
-                {
-                    ModelState.AddModelError("Image", "Invalid image file.");
-                    return View(model);
-                }
-            }
-            else
-            {
-                user.Image = user.Image ?? model.Image;
-            }
-
-            await _context.SaveChangesAsync();
-
-            TempData["SuccessMessage"] = "Profile updated successfully!";
-            return RedirectToAction("OrgEvents", "Organizer");
-        }
 
         // U S E R
 
-        // GET: /user-signup
         [HttpGet]
         [Route("/user-signup")]
         public IActionResult Signup()
@@ -257,7 +93,6 @@ namespace Event_Management.Controllers
             return View();
         }
 
-        // POST: /user-signup
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Route("/user-signup")]
@@ -284,43 +119,46 @@ namespace Event_Management.Controllers
                 return View(user);
             }
 
-            if (await _context.Users.AnyAsync(u => u.Email.ToLower().Trim() == user.Email.ToLower().Trim()))
-            {
-                ModelState.AddModelError("Email", "Email already exists.");
-                return View(user);
-            }
-
             try
             {
-                user.Password = PasswordHelper.HashPassword(user.Password);
-                user.CPassword = null;
                 user.Role = "User";
-                user.CreatedAt = DateTime.Now;
 
-                await _context.Users.AddAsync(user);
-                await _context.SaveChangesAsync();
+                var result = await _userService.CreateUserProfileAsync(user);
 
-                string token = _jwt.GenerateToken(user.Id.ToString(), user.Email);
+                if (!result.Success)
+                {
+                    ModelState.AddModelError(string.Empty, result.Message);
+                    return View(user);
+                }
 
-                Response.Cookies.Append("Token", token, new CookieOptions
+                Response.Cookies.Append("Token", result.Data.Token, new CookieOptions
                 {
                     HttpOnly = true,
-                    Expires = DateTimeOffset.Now.AddDays(7)
+                    Expires = DateTimeOffset.Now.AddDays(30)
                 });
 
-                TempData["SuccessMessage"] = "User Profile created successfully!";
+                TempData["SuccessMessage"] = "User profile created successfully!";
                 return RedirectToAction("Index", "Home");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error: {ex.Message}");
-                ModelState.AddModelError(string.Empty, "An error occurred. Please try again.");
+                Console.WriteLine($"Error creating user profile: {ex.Message}");
+                ModelState.AddModelError(string.Empty, "An unexpected error occurred. Please try again.");
                 return View(user);
             }
         }
 
+        /*--------------------------------------
+                    L O G I N 
+        --------------------------------------*/
 
-        // GET: /user-login
+        [HttpGet]
+        [Route("/org-login")]
+        public IActionResult Login()
+        {
+            return View();
+        }
+
         [HttpGet]
         [Route("/user-login")]
         public IActionResult UserLogin()
@@ -328,58 +166,108 @@ namespace Event_Management.Controllers
             return View();
         }
 
-        // POST: /user-login
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Route("/user-login")]
-        public async Task<IActionResult> UserLogin(Login  data)
+        [Route("/org-login")]
+        public async Task<IActionResult> Login(string email, string password)
         {
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                ModelState.AddModelError(nameof(email), "Email is required.");
+            }
+
+            if (string.IsNullOrWhiteSpace(password))
+            {
+                ModelState.AddModelError(nameof(password), "Password is required.");
+            }
+
             if (!ModelState.IsValid)
             {
-                return View(data);
+                return View();
             }
 
             try
             {
-                var user = await _context.Users
-                    .FirstOrDefaultAsync(u => u.Email.ToLower().Trim() == data.Email.ToLower().Trim() && u.Role == "User");
+                var result = await _userService.LoginOrganizerAsync(email, password);
 
-                if (user == null)
+                if (!result.Success)
                 {
-                    ModelState.AddModelError("Email", "Email does not exist as User account.");
-                    return View(data);
+                    ModelState.AddModelError(string.Empty, result.Message);
+                    return View();
                 }
 
-                if (!PasswordHelper.VerifyPassword(data.Password, user.Password))
-                {
-                    ModelState.AddModelError("Password", "Incorrect password.");
-                    return View(data);
-                }
-
-                string token = _jwt.GenerateToken(user.Id.ToString(), user.Email);
-
-                Response.Cookies.Append("Token", token, new CookieOptions
+                Response.Cookies.Append("Token", result.Data.Token, new CookieOptions
                 {
                     HttpOnly = true,
-                    Expires = DateTimeOffset.Now.AddDays(7)
+                    Expires = DateTimeOffset.Now.AddDays(30)
                 });
 
                 TempData["SuccessMessage"] = "Login successful!";
-                
                 return RedirectToAction("Index", "Home");
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Login Error: {ex.Message}");
                 ModelState.AddModelError(string.Empty, "An error occurred during login. Please try again.");
-                return View(data);
+                return View();
             }
         }
 
-        // GET: /update-user-profile
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Route("/user-login")]
+        public async Task<IActionResult> UserLogin(string email, string password)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                ModelState.AddModelError(nameof(email), "Email is required.");
+            }
+
+            if (string.IsNullOrWhiteSpace(password))
+            {
+                ModelState.AddModelError(nameof(password), "Password is required.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return View();
+            }
+
+            try
+            {
+                var result = await _userService.LoginUserAsync(email, password);
+
+                if (!result.Success)
+                {
+                    ModelState.AddModelError(string.Empty, result.Message);
+                    return View();
+                }
+
+                Response.Cookies.Append("Token", result.Data.Token, new CookieOptions
+                {
+                    HttpOnly = true,
+                    Expires = DateTimeOffset.Now.AddDays(30)
+                });
+
+                TempData["SuccessMessage"] = "Login successful!";
+                return RedirectToAction("Index", "Home");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Login Error: {ex.Message}");
+                ModelState.AddModelError(string.Empty, "An error occurred during login. Please try again.");
+                return View();
+            }
+        }
+
+
+        /*--------------------------------------
+                    U P D A T E 
+        --------------------------------------*/
+
         [HttpGet]
-        [Route("/update-user-profile")]
-        public async Task<IActionResult> UserUpdate()
+        [Route("/update-profile")]
+        public async Task<IActionResult> UpdateProfile()
         {
             Guid userId;
 
@@ -389,29 +277,35 @@ namespace Event_Management.Controllers
             }
             catch (Exception)
             {
-                return RedirectToAction("Signup", "Account");
+                return RedirectToAction("Create", "Account");
             }
 
-            var user = await _context.Users
-                .FirstOrDefaultAsync(o => o.Id == userId);
+            var result = await _userService.GetUserByIdAsync(userId);
 
-            if (user == null)
+            if (!result.Success || result.Data == null)
             {
-                return NotFound("User not found.");
+                return NotFound(result.Message ?? "User not found.");
             }
 
-            // Clear password fields for editing
+            var user = result.Data;
+
             user.Password = string.Empty;
             user.CPassword = string.Empty;
 
-            return View(user);
+            if (user.Role == "Organizer")
+            {
+                return View("OrgUpdate", user);
+            }
+            else
+            {
+                return View("UserUpdate", user);
+            }
         }
 
-        // POST: /update-user-profile
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Route("/update-user-profile")]
-        public async Task<IActionResult> UserUpdate(Users model, IFormFile ImageFile)
+        [Route("/update-profile")]
+        public async Task<IActionResult> UpdateProfile(Users model, IFormFile ImageFile)
         {
             Guid userId;
 
@@ -425,50 +319,92 @@ namespace Event_Management.Controllers
                 return RedirectToAction("Create", "Account");
             }
 
-            var user = await _context.Users.FirstOrDefaultAsync(o => o.Id == userId);
+            var userResult = await _userService.GetUserByIdAsync(userId);
 
-            if (user == null)
+            if (!userResult.Success || userResult.Data == null)
+            {
+                return NotFound(userResult.Message);
+            }
+
+            var userEntity = userResult.Data;
+
+            if (userEntity == null)
             {
                 return NotFound("User not found.");
             }
 
-            ModelState.Remove("Person");
-            ModelState.Remove("Address");
             ModelState.Remove("Role");
             ModelState.Remove("Password");
             ModelState.Remove("CPassword");
+            ModelState.Remove("CreatedAt");
             ModelState.Remove("ImageFile");
+
+            if (userEntity.Role == "Organizer")
+            {
+                if (string.IsNullOrWhiteSpace(model.Person))
+                    ModelState.AddModelError("Person", "Contact person name is required.");
+
+                if (string.IsNullOrWhiteSpace(model.Address))
+                    ModelState.AddModelError("Address", "Address is required.");
+            }
 
             if (!ModelState.IsValid)
             {
                 return View(model);
             }
 
-            user.Name = model.Name;
-            user.Email = model.Email;
-            user.PhoneNo = model.PhoneNo;
-
             if (ImageFile != null && ImageFile.Length > 0)
             {
                 try
                 {
-                    var imagePath = await FileUploadHelper.SaveFileAsync(ImageFile, "user");
-                    user.Image = imagePath;
+                    var imagePath = await Eventpro.Service.Helpers.FileUploadHelper.SaveFileAsync(ImageFile, "user");
+                    model.Image = imagePath;
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     ModelState.AddModelError("Image", "Invalid image file.");
                     return View(model);
                 }
             }
 
-            await _context.SaveChangesAsync();
+            try
+            {
+                var result = await _userService.UpdateProfileAsync(
+                    userId,
+                    model,
+                    userEntity.Role,
+                    userId
+                );
 
-            TempData["SuccessMessage"] = "Profile updated successfully!";
-            return RedirectToAction("Index", "Home");
+                if (!result.Success)
+                {
+                    ModelState.AddModelError(string.Empty, result.Message);
+                    return View(model);
+                }
+
+                TempData["SuccessMessage"] = "Profile updated successfully!";
+
+                if (userEntity.Role == "Organizer")
+                {
+                    return RedirectToAction("OrgEvents", "Organizer");
+                }
+                else
+                {
+                    return RedirectToAction("UserEvent", "User");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error updating profile: {ex.Message}");
+                ModelState.AddModelError(string.Empty, "An unexpected error occurred.");
+                return View(model);
+            }
         }
 
-        // L O G O U T
+        /*--------------------------------------
+                    L O G O U T
+        --------------------------------------*/
+
         [HttpGet]
         [Route("/logout")]
         public IActionResult Logout()
