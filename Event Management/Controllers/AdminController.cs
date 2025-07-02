@@ -1,6 +1,8 @@
 ﻿using Event_Management.Data;
 using Event_Management.Helpers;
-using Event_Management.Models;
+using Eventpro.Domain.Interfaces.IGallery;
+using Eventpro.Domain.Interfaces.IUser;
+using Eventpro.Domain.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,13 +10,13 @@ namespace Event_Management.Controllers
 {
     public class AdminController : Controller
     {
-        private readonly AppDbContext _context;
-        //private readonly JwtHelper _jwt;
+        private readonly IGalleryService _galleryService;
+        private readonly IUserRepository _userRepository;
 
-        public AdminController(AppDbContext context)
+        public AdminController(IGalleryService galleryService, IUserRepository userRepository)
         {
-            _context = context;
-            //_jwt = jwt;
+            _galleryService = galleryService;
+            _userRepository = userRepository;
         }
 
         // FUNCTION FOR ADMIN ACCESS
@@ -31,7 +33,7 @@ namespace Event_Management.Controllers
                 return null;
             }
 
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            var user = await _userRepository.GetByIdAsync(userId);
 
             if (user == null || user.Role != "Admin")
             {
@@ -40,7 +42,6 @@ namespace Event_Management.Controllers
 
             return user;
         }
-
 
         // GET: Service
         [HttpGet]
@@ -294,139 +295,142 @@ namespace Event_Management.Controllers
             return RedirectToAction("Provide");
         }
 
-        // GET: Gallery
+        /*--------------------------------------
+                   G A L L E R Y
+        --------------------------------------*/
+        // GET
         [HttpGet("admin/gallery")]
         public async Task<IActionResult> Gallery(string name, string type, Guid? id)
         {
-            var user = await GetAdminUser();
-            if (user == null)
+            try
             {
+                var user = await GetAdminUser();
+                if (user == null)
+                    return RedirectToAction("Index", "Home");
+
+                var result = await _galleryService.GetAllAsync(name, type);
+                ViewBag.GalleryList = (result.Data ?? Enumerable.Empty<Gallery>()).ToList();
+
+                Gallery selectedGallery = null;
+                if (id.HasValue)
+                {
+                    var getByIdResult = await _galleryService.GetByIdAsync(id.Value);
+                    selectedGallery = getByIdResult.Data;
+                }
+
+                ViewData["NameQuery"] = name;
+                ViewData["TypeFilter"] = type;
+                ModelState.Clear();
+
+                return View(selectedGallery ?? new Gallery());
+            }
+            catch (Exception ex)
+            {
+                // Optionally log the error here
+                TempData["ErrorMessage"] = "An unexpected error occurred while loading the gallery.";
                 return RedirectToAction("Index", "Home");
             }
-
-            var query = _context.Gallery.AsQueryable();
-
-            if (!string.IsNullOrWhiteSpace(name))
-            {
-                name = name.Trim();
-                query = query.Where(g => g.Name.Contains(name));
-            }
-
-            if (!string.IsNullOrWhiteSpace(type))
-            {
-                type = type.Trim();
-                query = query.Where(g => g.Type == type);
-            }
-
-            var galleryList = await query.ToListAsync();
-
-            Gallery selectedGallery = null;
-            if (id.HasValue)
-            {
-                selectedGallery = await _context.Gallery.FirstOrDefaultAsync(g => g.Id == id.Value);
-            }
-
-            ViewBag.GalleryList = galleryList;
-            ViewData["NameQuery"] = name;
-            ViewData["TypeFilter"] = type;
-
-            ModelState.Clear();
-
-            return View(selectedGallery ?? new Gallery());
         }
 
         // CREATE AND UPDATE - Gallery
         [HttpPost("admin/gallery")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Gallery(Gallery model)
+        public async Task<IActionResult> Gallery(Gallery model, IFormFile BannerFile)
         {
-            var user = await GetAdminUser();
-            if (user == null)
+            try
             {
-                return RedirectToAction("Index", "Home");
-            }
+                var user = await GetAdminUser();
+                if (user == null)
+                    return RedirectToAction("Index", "Home");
 
-            if (string.IsNullOrWhiteSpace(model.Name))
-                ModelState.AddModelError("Name", "Name is required.");
-            if (string.IsNullOrWhiteSpace(model.Description))
-                ModelState.AddModelError("Description", "Description is required.");
-            if (string.IsNullOrWhiteSpace(model.Type))
-                ModelState.AddModelError("Type", "Type is required.");
+                if (string.IsNullOrWhiteSpace(model.Name))
+                    ModelState.AddModelError("Name", "Name is required.");
+                if (string.IsNullOrWhiteSpace(model.Description))
+                    ModelState.AddModelError("Description", "Description is required.");
+                if (string.IsNullOrWhiteSpace(model.Type))
+                    ModelState.AddModelError("Type", "Type is required.");
 
-            if (!ModelState.IsValid)
-            {
-                ViewBag.GalleryList = await _context.Gallery.ToListAsync();
-                return View(model);
-            }
-
-            if (model.Id != Guid.Empty)
-            {
-                // UPDATE
-                var existing = await _context.Gallery.FindAsync(model.Id);
-                if (existing == null)
-                    return NotFound();
-
-                existing.Name = model.Name;
-                existing.Description = model.Description;
-                existing.Type = model.Type;
-
-                if (model.BannerFile != null && model.BannerFile.Length > 0)
+                if (!ModelState.IsValid)
                 {
-                    var imagePath = await FileUploadHelper.SaveFileAsync(model.BannerFile, "gallery");
-                    existing.Banner = imagePath;
-                }
-            }
-            else
-            {
-                // CREATE
-                string imagePath = "";
-                if (model.BannerFile != null && model.BannerFile.Length > 0)
-                {
-                    imagePath = await FileUploadHelper.SaveFileAsync(model.BannerFile, "gallery");
-                }
-                else
-                {
-                    ModelState.AddModelError("BannerFile", "Please upload an image.");
-                    ViewBag.GalleryList = await _context.Gallery.ToListAsync();
+                    var listResult = await _galleryService.GetAllAsync();
+                    ViewBag.GalleryList = (listResult.Data ?? Enumerable.Empty<Gallery>()).ToList();
                     return View(model);
                 }
 
-                var newGallery = new Gallery
+                if (model.Id != Guid.Empty)
                 {
-                    Id = Guid.NewGuid(),
-                    Name = model.Name,
-                    Description = model.Description,
-                    Type = model.Type,
-                    Banner = imagePath
-                };
+                    // UPDATE
+                    if (BannerFile != null && BannerFile.Length > 0)
+                    {
+                        model.Banner = await FileUploadHelper.SaveFileAsync(BannerFile, "gallery");
+                    }
 
-                _context.Gallery.Add(newGallery);
+                    var updateResult = await _galleryService.UpdateAsync(model);
+                    if (!updateResult.Success)
+                    {
+                        ModelState.AddModelError("", updateResult.Message);
+                        var listResult = await _galleryService.GetAllAsync();
+                        ViewBag.GalleryList = (listResult.Data ?? Enumerable.Empty<Gallery>()).ToList();
+                        return View(model);
+                    }
+                }
+                else
+                {
+                    // CREATE
+                    if (BannerFile == null || BannerFile.Length == 0)
+                    {
+                        ModelState.AddModelError("BannerFile", "Please upload an image.");
+                        var listResult = await _galleryService.GetAllAsync();
+                        ViewBag.GalleryList = (listResult.Data ?? Enumerable.Empty<Gallery>()).ToList();
+                        return View(model);
+                    }
+
+                    model.Banner = await FileUploadHelper.SaveFileAsync(BannerFile, "gallery");
+
+                    var createResult = await _galleryService.CreateAsync(model);
+                    if (!createResult.Success)
+                    {
+                        ModelState.AddModelError("", createResult.Message);
+                        var listResult = await _galleryService.GetAllAsync();
+                        ViewBag.GalleryList = (listResult.Data ?? Enumerable.Empty<Gallery>()).ToList();
+                        return View(model);
+                    }
+                }
+
+                return RedirectToAction("Gallery");
             }
-
-            await _context.SaveChangesAsync();
-            return RedirectToAction("Gallery");
+            catch (Exception)
+            {
+                TempData["ErrorMessage"] = "An unexpected error occurred while saving the gallery.";
+                return RedirectToAction("Gallery");
+            }
         }
 
-
-        // DELETE - Gallery
+        // DELETE
         [HttpPost("admin/gallery/delete/{id}")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteGallery(Guid id)
         {
-            var user = await GetAdminUser();
-            if (user == null)
+            try
             {
-                return RedirectToAction("Index", "Home");
+                var user = await GetAdminUser();
+                if (user == null)
+                    return RedirectToAction("Index", "Home");
+
+                var result = await _galleryService.DeleteAsync(id);
+                if (!result.Success)
+                {
+                    TempData["ErrorMessage"] = result.Message;
+                }
+
+                return RedirectToAction("Gallery");
             }
-
-            var gallery = await _context.Gallery.FindAsync(id);
-            if (gallery == null)
-                return NotFound();
-
-            _context.Gallery.Remove(gallery);
-            await _context.SaveChangesAsync();
-
-            return RedirectToAction("Gallery");
+            catch (Exception ex)
+            {
+                // Optionally log the error here
+                TempData["ErrorMessage"] = "An unexpected error occurred while deleting the gallery.";
+                return RedirectToAction("Gallery");
+            }
         }
 
         // GET: Users

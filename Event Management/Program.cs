@@ -1,4 +1,6 @@
 using Eventpro.DataAccess;
+using Eventpro.DataAccess.Repositories;
+using Eventpro.Domain.Interfaces.IGallery;
 using Eventpro.Domain.Interfaces.IUser;
 using Eventpro.Domain.ResponseFormat;
 using Eventpro.Service;
@@ -29,12 +31,12 @@ builder.Services.AddScoped<JwtHelper>();
 
 // Register Repositories (DataAccess Layer)
 builder.Services.AddScoped<IUserRepository, UserRepository>();
-
-// Register ServiceResponseFactory
-builder.Services.AddScoped<IServiceResponseFactory, ServiceResponseFactory>();
+builder.Services.AddScoped<IGalleryRepository, GalleryRepository>();
 
 // Register Services (Service Layer)
+builder.Services.AddScoped<IServiceResponseFactory, ServiceResponseFactory>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IGalleryService, GalleryService>();
 
 var app = builder.Build();
 

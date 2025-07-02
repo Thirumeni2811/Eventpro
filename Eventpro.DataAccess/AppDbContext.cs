@@ -10,6 +10,7 @@ namespace Eventpro.DataAccess
         { }
 
         public DbSet<Users> Users { get; set; }
+        public DbSet<Gallery> Gallery { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
