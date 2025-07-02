@@ -39,6 +39,11 @@ namespace Eventpro.DataAccess
             }
         }
 
+        public async Task<Users?> GetByEmailAsync(string email)
+        {
+            return await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+        }
+
         public async Task<IEnumerable<Users>> GetAllAsync()
         {
             try
@@ -49,6 +54,48 @@ namespace Eventpro.DataAccess
             {
                 throw new DatabaseException("Error retrieving all users.", ex);
             }
+        }
+
+        public async Task<IEnumerable<Users>> GetFilteredAsync(
+            string? userId = null,
+            string? name = null,
+            string? email = null,
+            string? phoneNo = null,
+            string? role = null)
+        {
+            var query = _context.Users.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(userId))
+            {
+                userId = userId.Trim();
+                query = query.Where(u => u.Id.ToString().Contains(userId));
+            }
+
+            if (!string.IsNullOrWhiteSpace(name))
+            {
+                name = name.Trim();
+                query = query.Where(u => u.Name.Contains(name));
+            }
+
+            if (!string.IsNullOrWhiteSpace(email))
+            {
+                email = email.Trim();
+                query = query.Where(u => u.Email.Contains(email));
+            }
+
+            if (!string.IsNullOrWhiteSpace(phoneNo))
+            {
+                phoneNo = phoneNo.Trim();
+                query = query.Where(u => u.PhoneNo.Contains(phoneNo));
+            }
+
+            if (!string.IsNullOrWhiteSpace(role))
+            {
+                role = role.Trim();
+                query = query.Where(u => u.Role == role);
+            }
+
+            return await query.ToListAsync();
         }
 
         public async Task<bool> ExistsByEmailAsync(string email)

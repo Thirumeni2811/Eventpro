@@ -6,6 +6,7 @@ using Eventpro.Domain.Interfaces.IServ;
 using Eventpro.Domain.Interfaces.IUser;
 using Eventpro.Domain.Models;
 using Eventpro.Domain.ResponseFormat;
+using Eventpro.Service;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,13 +18,15 @@ namespace Event_Management.Controllers
         private readonly IServService _servService;
         private readonly IProvideService _provideService;
         private readonly IGalleryService _galleryService;
+        private readonly IUserService _userService;
         private readonly IUserRepository _userRepository;
 
-        public AdminController(IServService servService, IProvideService provideService, IGalleryService galleryService, IUserRepository userRepository)
+        public AdminController(IServService servService, IProvideService provideService, IGalleryService galleryService, IUserService userService, IUserRepository userRepository)
         {
             _servService = servService;
             _provideService = provideService;
             _galleryService = galleryService;
+            _userService = userService;
             _userRepository = userRepository;
         }
 
@@ -430,132 +433,130 @@ namespace Event_Management.Controllers
             }
         }
 
-        // GET: Users
+        /*--------------------------------------
+                       U S E R
+        --------------------------------------*/
+
+        // GET
         [HttpGet("admin/users")]
         public async Task<IActionResult> Users(string userId, string name, string email, string phoneNo, string role, Guid? id)
         {
-            var user = await GetAdminUser();
-            if (user == null)
+            try
             {
+                var admin = await GetAdminUser();
+                if (admin == null)
+                    return RedirectToAction("Index", "Home");
+
+                var allUsersResponse = await _userService.GetAllUsersAsync(
+                    admin.Role,
+                    userId,
+                    name,
+                    email,
+                    phoneNo,
+                    role
+                );
+
+                if (!allUsersResponse.Success)
+                {
+                    TempData["ErrorMessage"] = allUsersResponse.Message;
+                    return RedirectToAction("Index", "Home");
+                }
+
+                var usersList = allUsersResponse.Data.ToList();
+
+                Users selectedUser = null;
+                if (id.HasValue)
+                {
+                    var getUserResponse = await _userService.GetUserByIdAsync(id.Value);
+                    if (getUserResponse.Success)
+                        selectedUser = getUserResponse.Data;
+                }
+
+                ViewBag.UsersList = usersList;
+                ViewData["Name"] = name;
+                ViewData["Email"] = email;
+                ViewData["Phone"] = phoneNo;
+                ViewData["Role"] = role;
+
+                ModelState.Clear();
+
+                return View(selectedUser ?? new Users());
+            }
+            catch (Exception)
+            {
+                TempData["ErrorMessage"] = "An unexpected error occurred while loading users.";
                 return RedirectToAction("Index", "Home");
             }
-
-            var query = _context.Users.AsQueryable();
-
-            if (!string.IsNullOrWhiteSpace(userId))
-            {
-                userId = userId.Trim();
-                query = query.Where(u => u.Id.ToString().Contains(userId));
-            }
-
-            if (!string.IsNullOrWhiteSpace(name))
-            {
-                name = name.Trim();
-                query = query.Where(u => u.Name.Contains(name));
-            }
-
-            if (!string.IsNullOrWhiteSpace(email))
-            {
-                email = email.Trim();
-                query = query.Where(u => u.Email.Contains(email));
-            }
-
-            if (!string.IsNullOrWhiteSpace(phoneNo))
-            {
-                phoneNo = phoneNo.Trim();
-                query = query.Where(u => u.PhoneNo.Contains(phoneNo));
-            }
-
-            if (!string.IsNullOrWhiteSpace(role))
-            {
-                role = role.Trim();
-                query = query.Where(u => u.Role == role);
-            }
-
-            var usersList = await query.ToListAsync();
-
-            Users selectedUser = null;
-            if (id.HasValue)
-            {
-                selectedUser = await _context.Users.FirstOrDefaultAsync(u => u.Id == id.Value);
-            }
-
-            ViewBag.UsersList = usersList;
-
-            ViewData["Name"] = name;
-            ViewData["Email"] = email;
-            ViewData["Phone"] = phoneNo;
-            ViewData["Role"] = role;
-
-            ModelState.Clear();
-
-            return View(selectedUser ?? new Users());
         }
 
-        // CREATE AND UPDATE - Users
+        // CREATE and UPDATE - Users
         [HttpPost("admin/users")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Users(Users model)
         {
-            var user = await GetAdminUser();
-            if (user == null)
+            try
             {
-                return RedirectToAction("Index", "Home");
-            }
+                var admin = await GetAdminUser();
+                if (admin == null)
+                    return RedirectToAction("Index", "Home");
 
-            if (model.Id == Guid.Empty)
-            {
-                if (string.IsNullOrWhiteSpace(model.Password))
-                    ModelState.AddModelError(nameof(model.Password), "Password is required.");
-                if (model.Password != model.CPassword)
-                    ModelState.AddModelError(nameof(model.CPassword), "Passwords do not match.");
-            }
-            else
-            {
-                if (!string.IsNullOrWhiteSpace(model.Password))
+                if (model.Id == Guid.Empty)
                 {
+                    if (string.IsNullOrWhiteSpace(model.Password))
+                        ModelState.AddModelError(nameof(model.Password), "Password is required.");
                     if (model.Password != model.CPassword)
                         ModelState.AddModelError(nameof(model.CPassword), "Passwords do not match.");
                 }
-            }
-
-            if (!ModelState.IsValid)
-            {
-                ViewBag.UsersList = await _context.Users.ToListAsync();
-                return View(model);
-            }
-
-            if (model.Id != Guid.Empty)
-            {
-                // UPDATE
-                var existing = await _context.Users.FindAsync(model.Id);
-                if (existing == null)
-                    return NotFound();
-
-                existing.Name = model.Name;
-                existing.Email = model.Email;
-                existing.PhoneNo = model.PhoneNo;
-                existing.Password = existing.Password;
-                existing.Role = model.Role;
-            }
-            else
-            {
-                // CREATE
-                var newUser = new Users
+                else
                 {
-                    Id = Guid.NewGuid(),
-                    Name = model.Name,
-                    Email = model.Email,
-                    PhoneNo = model.PhoneNo,
-                    Password = PasswordHelper.HashPassword(model.Password),
-                    Role = model.Role
-                };
+                    if (!string.IsNullOrWhiteSpace(model.Password))
+                    {
+                        if (model.Password != model.CPassword)
+                            ModelState.AddModelError(nameof(model.CPassword), "Passwords do not match.");
+                    }
+                }
 
-                _context.Users.Add(newUser);
+                if (!ModelState.IsValid)
+                {
+                    var allUsersResponse = await _userService.GetAllUsersAsync(admin.Role);
+                    ViewBag.UsersList = (allUsersResponse.Data ?? Enumerable.Empty<Users>()).ToList();
+                    return View(model);
+                }
+
+                IServiceResponse<Users> response;
+
+                if (model.Id == Guid.Empty)
+                {
+                    // CREATE
+                    var createResponse = await _userService.CreateUserProfileAsync(model);
+                    if (!createResponse.Success)
+                    {
+                        ModelState.AddModelError("", createResponse.Message);
+                        var allUsersResponse = await _userService.GetAllUsersAsync(admin.Role);
+                        ViewBag.UsersList = (allUsersResponse.Data ?? Enumerable.Empty<Users>()).ToList();
+                        return View(model);
+                    }
+                }
+                else
+                {
+                    // UPDATE
+                    response = await _userService.UpdateProfileAsync(model.Id, model, admin.Role, admin.Id);
+                    if (!response.Success)
+                    {
+                        ModelState.AddModelError("", response.Message);
+                        var allUsersResponse = await _userService.GetAllUsersAsync(admin.Role);
+                        ViewBag.UsersList = (allUsersResponse.Data ?? Enumerable.Empty<Users>()).ToList();
+                        return View(model);
+                    }
+                }
+
+                return RedirectToAction("Users");
             }
-
-            await _context.SaveChangesAsync();
-            return RedirectToAction("Users");
+            catch (Exception)
+            {
+                TempData["ErrorMessage"] = "An unexpected error occurred while saving user.";
+                return RedirectToAction("Users");
+            }
         }
 
         // DELETE - Users
@@ -563,21 +564,27 @@ namespace Event_Management.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteUser(Guid id)
         {
-            var use= await GetAdminUser();
-            if (use == null)
+            try
             {
-                return RedirectToAction("Index", "Home");
+                var admin = await GetAdminUser();
+                if (admin == null)
+                    return RedirectToAction("Index", "Home");
+
+                var deleteResponse = await _userService.DeleteUserAsync(id, admin.Role, admin.Id);
+                if (!deleteResponse.Success)
+                {
+                    TempData["ErrorMessage"] = deleteResponse.Message;
+                }
+
+                return RedirectToAction("Users");
             }
-
-            var user = await _context.Users.FindAsync(id);
-            if (user == null)
-                return NotFound();
-
-            _context.Users.Remove(user);
-            await _context.SaveChangesAsync();
-
-            return RedirectToAction("Users");
+            catch (Exception)
+            {
+                TempData["ErrorMessage"] = "An unexpected error occurred while deleting user.";
+                return RedirectToAction("Users");
+            }
         }
+
 
         // GET: Events
         [HttpGet("/admin/events")]
@@ -792,32 +799,11 @@ namespace Event_Management.Controllers
             return View(model);
         }
 
-        // ADMIN
+        /*--------------------------------------
+                       A D M I N
+        --------------------------------------*/
 
-        // Create
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateAdmin()
-        {
-            var user = new Users
-            {
-                Id = Guid.NewGuid(),
-                Name = "Admin",
-                Email = "admin@gmail.com",
-                PhoneNo = "9090909090",
-                Role = "Admin",
-                Password = PasswordHelper.HashPassword("admin@123"),
-                CreatedAt = DateTime.UtcNow
-            };
-
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
-
-            TempData["SuccessMessage"] = "Admin user created successfully.";
-            return RedirectToAction("CreateAdminUser");
-        }
-
-        // Get - Login
+        // GET
         [HttpGet]
         [Route("admin-login")]
         public IActionResult Login()
@@ -825,38 +811,38 @@ namespace Event_Management.Controllers
             return View();
         }
 
-        // Post - Login
+        // POST
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Route("admin-login")]
-        public async Task<IActionResult> Login(Login model)
+        public async Task<IActionResult> Login(string email, string password)
         {
+            if (string.IsNullOrWhiteSpace(email))
+                ModelState.AddModelError(nameof(email), "Email is required.");
+
+            if (string.IsNullOrWhiteSpace(password))
+                ModelState.AddModelError(nameof(password), "Password is required.");
+
             if (!ModelState.IsValid)
+                return View();
+
+            var result = await _userService.LoginAdminAsync(email, password);
+
+            if (!result.Success)
             {
-                return View(model);
+                ModelState.AddModelError("", result.Message);
+                return View();
             }
 
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == model.Email);
-
-            if (user == null || !PasswordHelper.VerifyPassword(model.Password, user.Password))
-            {
-                ModelState.AddModelError("", "Invalid email or password.");
-                return View(model);
-            }
-
-            if (user.Role != "Admin")
-            {
-                return RedirectToAction("Index", "Home");
-            }
-
-            //string token = _jwt.GenerateToken(user.Id.ToString(), user.Email);
-            string token = "wreiuo346tuyhj";
-
-            HttpContext.Session.SetString("Token", token);
+            // Save token in session
+            HttpContext.Session.SetString("Token", result.Data.Token);
 
             return RedirectToAction("Service", "Admin");
         }
 
+        /*--------------------------------------
+                     L O G O U T
+        --------------------------------------*/
         public IActionResult Logout()
         {
             HttpContext.Session.Clear();

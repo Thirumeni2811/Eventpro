@@ -235,7 +235,13 @@ public class UserService : IUserService
     }
 
     // 6. Get all users (Admin only)
-    public async Task<IServiceResponse<IEnumerable<Users>>> GetAllUsersAsync(string actingRole)
+    public async Task<IServiceResponse<IEnumerable<Users>>> GetAllUsersAsync(
+        string actingRole,
+        string? userId = null,
+        string? name = null,
+        string? email = null,
+        string? phoneNo = null,
+        string? role = null)
     {
         try
         {
@@ -243,12 +249,13 @@ public class UserService : IUserService
             {
                 return _responseFactory.CreateResponse<IEnumerable<Users>>(
                     false,
-                    "Unauthorized to get all users.",
+                    "Unauthorized.",
                     ActionType.Unauthorized
                 );
             }
 
-            var users = await _repository.GetAllAsync();
+            var users = await _repository.GetFilteredAsync(userId, name, email, phoneNo, role);
+
             return _responseFactory.CreateResponse(
                 true,
                 "Users retrieved successfully.",
@@ -261,6 +268,7 @@ public class UserService : IUserService
             throw new ServiceException("Error retrieving users.", ex);
         }
     }
+
 
     // 7. Get user by ID
     public async Task<IServiceResponse<Users>> GetUserByIdAsync(Guid userId)
@@ -289,4 +297,55 @@ public class UserService : IUserService
             throw new ServiceException("Error retrieving user.", ex);
         }
     }
+
+    // 8. Admin Login
+    public async Task<IServiceResponse<(Users User, string Token)>> LoginAdminAsync(string email, string password)
+    {
+        try
+        {
+            // Find user by email
+            var user = await _repository.GetByEmailAsync(email);
+            if (user == null)
+            {
+                return _responseFactory.CreateResponse<(Users User, string Token)>(
+                    false,
+                    "Admin account not found.",
+                    ActionType.NotFound
+                );
+            }
+
+            // Must be Admin
+            if (user.Role != "Admin")
+            {
+                return _responseFactory.CreateResponse<(Users User, string Token)>(
+                    false,
+                    "Access denied: Not an Admin account.",
+                    ActionType.Unauthorized
+                );
+            }
+
+            if (!PasswordHelper.VerifyPassword(password, user.Password))
+            {
+                return _responseFactory.CreateResponse<(Users User, string Token)>(
+                    false,
+                    "Incorrect password.",
+                    ActionType.Unauthorized
+                );
+            }
+
+            var token = _jwtHelper.GenerateToken(user.Id, user.Email);
+
+            return _responseFactory.CreateResponse(
+                true,
+                "Login successful.",
+                ActionType.Retrieved,
+                (user, token)
+            );
+        }
+        catch (Exception ex)
+        {
+            throw new ServiceException("Error during admin login.", ex);
+        }
+    }
+
 }
