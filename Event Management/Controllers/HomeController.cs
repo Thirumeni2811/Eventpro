@@ -1,26 +1,29 @@
-//using System.Diagnostics;
-//using Event_Management.Models;
-//using Microsoft.AspNetCore.Mvc;
-using Event_Management.Data;
 using Event_Management.Helpers;
-using Event_Management.Models;
+using Eventpro.Domain.Interfaces.IGallery;
+using Eventpro.Domain.Interfaces.IProvide;
+using Eventpro.Domain.Interfaces.IServ;
+using Eventpro.Domain.Models;
+using Eventpro.Service;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.Text.Json;
 
 namespace Event_Management.Controllers
 {
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
-        private readonly AppDbContext _context;
+        private readonly IGalleryService _galleryService;
+        private readonly IProvideService _provideService;
+        private readonly IUserService _userService;
+        private readonly IServService _servService;
 
-        public HomeController(AppDbContext context, ILogger<HomeController> logger)
+        public HomeController(IGalleryService galleryService, IProvideService provideService, IServService servService, IUserService userService, ILogger<HomeController> logger)
         {
-            _context = context;
+            _galleryService = galleryService;
+            _provideService = provideService;
+            _servService = servService;
+            _userService = userService;
+
             _logger = logger;
         }
 
@@ -28,11 +31,9 @@ namespace Event_Management.Controllers
         {
             return HttpContext.Request.Cookies.TryGetValue("token", out string? token) && !string.IsNullOrWhiteSpace(token);
         }
+
         public async Task<IActionResult> Index()
         {
-            //if (!IsTokenValid())
-            //    return RedirectToAction("Create", "Account");
-
             Guid userId;
             try
             {
@@ -40,33 +41,34 @@ namespace Event_Management.Controllers
             }
             catch
             {
-                //return RedirectToAction("Create", "Account");
                 userId = Guid.Empty;
             }
 
-            //var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
-            //if (user == null)
-            //{
-            //    return RedirectToAction("Create", "Account");
-            //}
-
-            var user = userId != Guid.Empty
-                ? await _context.Users.FirstOrDefaultAsync(u => u.Id == userId)
-                : null;
-
-            var galleries = await _context.Gallery.ToListAsync();
-            var provides = await _context.Provides.ToListAsync();
-            var services = await _context.Services.ToListAsync();
-
-            var viewModel = new HomeView
+            Users user = null;
+            if (userId != Guid.Empty)
             {
-                Gallery = galleries,
-                Provides = provides,
-                Services = services,
-                Role = user?.Role
-            };
+                var userResult = await _userService.GetUserByIdAsync(userId);
+                user = userResult.Data;
+            }
 
-            return View(viewModel);
+            // Fetch Gallery
+            var galleryResponse = await _galleryService.GetAllAsync();
+            var galleries = galleryResponse.Data ?? Enumerable.Empty<Gallery>();
+
+            // Fetch Provides
+            var provideResponse = await _provideService.GetAllAsync();
+            var provides = provideResponse.Data ?? Enumerable.Empty<Provides>();
+
+            // Fetch Services
+            var servicesResponse = await _servService.GetAllAsync();
+            var services = servicesResponse.Data ?? Enumerable.Empty<Services>();
+
+            ViewBag.Gallery = galleries.ToList();
+            ViewBag.Provides = provides.ToList();
+            ViewBag.Services = services.ToList();
+            ViewBag.Role = user?.Role;
+
+            return View();
         }
 
         public IActionResult Privacy()
