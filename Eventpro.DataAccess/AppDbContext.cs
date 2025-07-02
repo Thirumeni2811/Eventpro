@@ -12,6 +12,7 @@ namespace Eventpro.DataAccess
         public DbSet<Users> Users { get; set; }
         public DbSet<Gallery> Gallery { get; set; }
         public DbSet<Services> Services { get; set; }
+        public DbSet<Provides> Provides { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -30,6 +31,15 @@ namespace Eventpro.DataAccess
 
             // Services table config
             modelBuilder.Entity<Services>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Title).IsRequired();
+                entity.Property(e => e.Description).IsRequired();
+            });
+
+            // Provides table config
+            modelBuilder.Entity<Provides>(entity =>
             {
                 entity.HasKey(e => e.Id);
 

@@ -1,6 +1,7 @@
 ﻿using Event_Management.Data;
 using Event_Management.Helpers;
 using Eventpro.Domain.Interfaces.IGallery;
+using Eventpro.Domain.Interfaces.IProvide;
 using Eventpro.Domain.Interfaces.IServ;
 using Eventpro.Domain.Interfaces.IUser;
 using Eventpro.Domain.Models;
@@ -14,12 +15,14 @@ namespace Event_Management.Controllers
     {
 
         private readonly IServService _servService;
+        private readonly IProvideService _provideService;
         private readonly IGalleryService _galleryService;
         private readonly IUserRepository _userRepository;
 
-        public AdminController(IServService servService, IGalleryService galleryService, IUserRepository userRepository)
+        public AdminController(IServService servService, IProvideService provideService, IGalleryService galleryService, IUserRepository userRepository)
         {
             _servService = servService;
+            _provideService = provideService;
             _galleryService = galleryService;
             _userRepository = userRepository;
         }
@@ -170,133 +173,126 @@ namespace Event_Management.Controllers
             }
         }
 
+        /*--------------------------------------
+                   P R O V I D E
+        --------------------------------------*/
 
-        // GET: Provide
-        [HttpGet]
-        [Route("admin/provide")]
+        // GER
+        [HttpGet("admin/provide")]
         public async Task<IActionResult> Provide(string title, Guid? id)
         {
-            var user = await GetAdminUser();
-            if (user == null)
+            try
             {
+                var user = await GetAdminUser();
+                if (user == null)
+                    return RedirectToAction("Index", "Home");
+
+                var listResponse = await _provideService.GetAllAsync(title);
+                ViewBag.ProvideList = (listResponse.Data ?? Enumerable.Empty<Provides>()).ToList();
+                ViewData["TitleQuery"] = title;
+
+                Provides selectedProvide = null;
+                if (id.HasValue)
+                {
+                    var getByIdResponse = await _provideService.GetByIdAsync(id.Value);
+                    selectedProvide = getByIdResponse.Data;
+                }
+
+                ModelState.Clear();
+                return View(selectedProvide ?? new Provides());
+            }
+            catch (Exception)
+            {
+                TempData["ErrorMessage"] = "An unexpected error occurred while loading provides.";
                 return RedirectToAction("Index", "Home");
             }
-
-            var provideQuery = _context.Provides.AsQueryable();
-
-            if (!string.IsNullOrWhiteSpace(title))
-            {
-                title = title.Trim();
-                provideQuery = provideQuery.Where(s => s.Title.Contains(title));
-            }
-
-            var provideList = await provideQuery.ToListAsync();
-
-            Provide selectedProvide = null;
-            if (id.HasValue)
-            {
-                selectedProvide = await _context.Provides.FirstOrDefaultAsync(s => s.Id == id.Value);
-            }
-
-            ViewBag.ProvideList = provideList;
-            ViewData["TitleQuery"] = title;
-
-            ModelState.Clear();
-
-            return View(selectedProvide ?? new Provide());
         }
 
-        // CREATE AND UPDATE - Service
+        // CREATE AND UPDATE
         [HttpPost("admin/provide")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Provide(Provide model)
+        public async Task<IActionResult> Provide(Provides model, IFormFile BannerFile)
         {
-            var user = await GetAdminUser();
-            if (user == null)
+            try
             {
-                return RedirectToAction("Index", "Home");
-            }
+                var user = await GetAdminUser();
+                if (user == null)
+                    return RedirectToAction("Index", "Home");
 
-            if (string.IsNullOrWhiteSpace(model.Title))
-                ModelState.AddModelError("Title", "Title is required.");
+                if (string.IsNullOrWhiteSpace(model.Title))
+                    ModelState.AddModelError("Title", "Title is required.");
 
-            if (string.IsNullOrWhiteSpace(model.Description))
-                ModelState.AddModelError("Description", "Description is required.");
+                if (string.IsNullOrWhiteSpace(model.Description))
+                    ModelState.AddModelError("Description", "Description is required.");
 
-            if (!ModelState.IsValid)
-            {
-                // Reload the list to show in the view again
-                ViewBag.ProvideList = await _context.Provides.ToListAsync();
-                return View(model);
-            }
-
-            if (model.Id != Guid.Empty)
-            {
-                // UPDATE
-                var existing = await _context.Provides.FindAsync(model.Id);
-                if (existing == null)
-                    return NotFound();
-
-                existing.Title = model.Title;
-                existing.Description = model.Description;
-
-                if (model.BannerFile != null && model.BannerFile.Length > 0)
-                {
-                    var imagePath = await FileUploadHelper.SaveFileAsync(model.BannerFile, "provide");
-                    existing.Img = imagePath;
-                }
-            }
-            else
-            {
-                // CREATE
-                string imagePath = "";
-                if (model.BannerFile != null && model.BannerFile.Length > 0)
-                {
-                    imagePath = await FileUploadHelper.SaveFileAsync(model.BannerFile, "provide");
-                }
-                else
-                {
+                if (model.Id == Guid.Empty && (BannerFile == null || BannerFile.Length == 0))
                     ModelState.AddModelError("BannerFile", "Please upload an image.");
-                    ViewBag.ProvideList = await _context.Provides.ToListAsync();
+
+                if (!ModelState.IsValid)
+                {
+                    var listResponse = await _provideService.GetAllAsync();
+                    ViewBag.ProvideList = (listResponse.Data ?? Enumerable.Empty<Provides>()).ToList();
                     return View(model);
                 }
 
-                var newProvide = new Provide
+                if (BannerFile != null && BannerFile.Length > 0)
                 {
-                    Id = Guid.NewGuid(),
-                    Title = model.Title,
-                    Description = model.Description,
-                    Img = imagePath
-                };
+                    model.Img = await FileUploadHelper.SaveFileAsync(BannerFile, "provide");
+                }
 
-                _context.Provides.Add(newProvide);
+                IServiceResponse<Provides> result;
+                if (model.Id == Guid.Empty)
+                {
+                    result = await _provideService.CreateAsync(model, user.Role);
+                }
+                else
+                {
+                    result = await _provideService.UpdateAsync(model, user.Role);
+                }
+
+                if (!result.Success)
+                {
+                    ModelState.AddModelError("", result.Message);
+                    var listResponse = await _provideService.GetAllAsync();
+                    ViewBag.ProvideList = (listResponse.Data ?? Enumerable.Empty<Provides>()).ToList();
+                    return View(model);
+                }
+
+                return RedirectToAction("Provide");
             }
-
-            await _context.SaveChangesAsync();
-            return RedirectToAction("Provide");
+            catch (Exception)
+            {
+                TempData["ErrorMessage"] = "An unexpected error occurred while saving the provide.";
+                return RedirectToAction("Provide");
+            }
         }
 
-        // DELETE - Provide
-        [HttpPost]
+        // DELETE
+        [HttpPost("admin/provide/delete/{id}")]
         [ValidateAntiForgeryToken]
-        [Route("admin/provide/delete/{id}")]
         public async Task<IActionResult> DeleteProvide(Guid id)
         {
-            var user = await GetAdminUser();
-            if (user == null)
+            try
             {
-                return RedirectToAction("Index", "Home");
+                var user = await GetAdminUser();
+                if (user == null)
+                    return RedirectToAction("Index", "Home");
+
+                var result = await _provideService.DeleteAsync(id);
+                if (!result.Success)
+                {
+                    TempData["ErrorMessage"] = result.Message;
+                }
+
+                return RedirectToAction("Provide");
             }
-
-            var provide = await _context.Provides.FindAsync(id);
-            if (provide == null)
-                return NotFound();
-
-            _context.Provides.Remove(provide);
-            await _context.SaveChangesAsync();
-
-            return RedirectToAction("Provide");
+            catch (Exception)
+            {
+                TempData["ErrorMessage"] = "An unexpected error occurred while deleting the provide.";
+                return RedirectToAction("Provide");
+            }
         }
+
 
         /*--------------------------------------
                    G A L L E R Y

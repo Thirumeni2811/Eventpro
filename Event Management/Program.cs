@@ -8,6 +8,7 @@ using Eventpro.Service.Constants;
 using Eventpro.Service.Helpers;
 using Eventpro.Service.Responses;
 using Microsoft.EntityFrameworkCore;
+using Eventpro.Domain.Interfaces.IProvide;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,12 +33,14 @@ builder.Services.AddScoped<JwtHelper>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IGalleryRepository, GalleryRepository>();
 builder.Services.AddScoped<IServRepository, ServRepository>();
+builder.Services.AddScoped<IProvideRepository, ProvideRepository>();
 
 // Register Services (Service Layer)
 builder.Services.AddScoped<IServiceResponseFactory, ServiceResponseFactory>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IGalleryService, GalleryService>();
 builder.Services.AddScoped<IServService, ServService>();
+builder.Services.AddScoped<IProvideService, ProvideService>();
 
 var app = builder.Build();
 
