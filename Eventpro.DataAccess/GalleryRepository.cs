@@ -1,9 +1,8 @@
 ﻿using Eventpro.Domain.Interfaces.IGallery;
 using Eventpro.Domain.Models;
-using Eventpro.DataAccess;
 using Microsoft.EntityFrameworkCore;
 
-namespace Eventpro.DataAccess.Repositories
+namespace Eventpro.DataAccess
 {
     public class GalleryRepository : IGalleryRepository
     {

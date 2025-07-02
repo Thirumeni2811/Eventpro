@@ -1,8 +1,10 @@
 ﻿using Event_Management.Data;
 using Event_Management.Helpers;
 using Eventpro.Domain.Interfaces.IGallery;
+using Eventpro.Domain.Interfaces.IServ;
 using Eventpro.Domain.Interfaces.IUser;
 using Eventpro.Domain.Models;
+using Eventpro.Domain.ResponseFormat;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,11 +12,14 @@ namespace Event_Management.Controllers
 {
     public class AdminController : Controller
     {
+
+        private readonly IServService _servService;
         private readonly IGalleryService _galleryService;
         private readonly IUserRepository _userRepository;
 
-        public AdminController(IGalleryService galleryService, IUserRepository userRepository)
+        public AdminController(IServService servService, IGalleryService galleryService, IUserRepository userRepository)
         {
+            _servService = servService;
             _galleryService = galleryService;
             _userRepository = userRepository;
         }
@@ -43,107 +48,99 @@ namespace Event_Management.Controllers
             return user;
         }
 
-        // GET: Service
+
+        /*--------------------------------------
+                   S E R V I C E
+        --------------------------------------*/
+
+        // GET
         [HttpGet]
         [Route("admin/services")]
         public async Task<IActionResult> Service(string title, Guid? id)
         {
-            var user = await GetAdminUser();
-            if (user == null)
+            try
             {
+                var user = await GetAdminUser();
+                if (user == null)
+                    return RedirectToAction("Index", "Home");
+
+                var listResponse = await _servService.GetAllAsync(title);
+                ViewBag.ServicesList = (listResponse.Data ?? Enumerable.Empty<Services>()).ToList();
+                ViewData["TitleQuery"] = title;
+
+                Services selectedService = null;
+                if (id.HasValue)
+                {
+                    var getByIdResponse = await _servService.GetByIdAsync(id.Value);
+                    selectedService = getByIdResponse.Data;
+                }
+
+                ModelState.Clear();
+                return View(selectedService ?? new Services());
+            }
+            catch (Exception)
+            {
+                TempData["ErrorMessage"] = "An unexpected error occurred while loading services.";
                 return RedirectToAction("Index", "Home");
             }
-
-            var servicesQuery = _context.Services.AsQueryable();
-
-            if (!string.IsNullOrWhiteSpace(title))
-            {
-                title = title.Trim();
-                servicesQuery = servicesQuery.Where(s => s.Title.Contains(title));
-            }
-
-            var servicesList = await servicesQuery.ToListAsync();
-
-            Service selectedService = null;
-            if (id.HasValue)
-            {
-                selectedService = await _context.Services.FirstOrDefaultAsync(s => s.Id == id.Value);
-            }
-
-            ViewBag.ServicesList = servicesList;
-            ViewData["TitleQuery"] = title;
-
-            ModelState.Clear();
-
-            return View(selectedService ?? new Service());
         }
 
         // CREATE AND UPDATE - Service
         [HttpPost("admin/services")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Service(Service model)
+        public async Task<IActionResult> Service(Services model, IFormFile BannerFile)
         {
-            var user = await GetAdminUser();
-            if (user == null)
+            try
             {
-                return RedirectToAction("Index", "Home");
-            }
+                var user = await GetAdminUser();
+                if (user == null)
+                    return RedirectToAction("Index", "Home");
 
-            if (string.IsNullOrWhiteSpace(model.Title))
-                ModelState.AddModelError("Title", "Title is required.");
-            if (string.IsNullOrWhiteSpace(model.Description))
-                ModelState.AddModelError("Description", "Description is required.");
+                if (string.IsNullOrWhiteSpace(model.Title))
+                    ModelState.AddModelError("Title", "Title is required.");
+                if (string.IsNullOrWhiteSpace(model.Description))
+                    ModelState.AddModelError("Description", "Description is required.");
 
-            if (!ModelState.IsValid)
-            {
-                ViewBag.ServicesList = await _context.Services.ToListAsync();
-                return View(model);
-            }
-
-            if (model.Id != Guid.Empty)
-            {
-                var existing = await _context.Services.FindAsync(model.Id);
-                if (existing == null)
-                    return NotFound();
-
-                existing.Title = model.Title;
-                existing.Description = model.Description;
-
-                if (model.BannerFile != null && model.BannerFile.Length > 0)
-                {
-                    var imagePath = await FileUploadHelper.SaveFileAsync(model.BannerFile, "service");
-                    existing.Img = imagePath;
-                }
-
-            }
-            else
-            {
-                // CREATE
-                string imagePath = "";
-                if (model.BannerFile != null && model.BannerFile.Length > 0)
-                {
-                    imagePath = await FileUploadHelper.SaveFileAsync(model.BannerFile, "service");
-                }
-                else
-                {
+                if (model.Id == Guid.Empty && (BannerFile == null || BannerFile.Length == 0))
                     ModelState.AddModelError("BannerFile", "Please upload an image.");
-                    ViewBag.ServicesList = await _context.Services.ToListAsync();
+
+                if (!ModelState.IsValid)
+                {
+                    var listResponse = await _servService.GetAllAsync();
+                    ViewBag.ServicesList = (listResponse.Data ?? Enumerable.Empty<Services>()).ToList();
                     return View(model);
                 }
 
-                var newService = new Service
+                if (BannerFile != null && BannerFile.Length > 0)
                 {
-                    Id = Guid.NewGuid(),
-                    Title = model.Title,
-                    Description = model.Description,
-                    Img = imagePath
-                };
+                    model.Img = await FileUploadHelper.SaveFileAsync(BannerFile, "service");
+                }
 
-                _context.Services.Add(newService);
+                IServiceResponse<Services> result;
+                if (model.Id == Guid.Empty)
+                {
+                    result = await _servService.CreateAsync(model, user.Role);
+                }
+                else
+                {
+                    result = await _servService.UpdateAsync(model, user.Role);
+                }
+
+                if (!result.Success)
+                {
+                    ModelState.AddModelError("", result.Message);
+                    var listResponse = await _servService.GetAllAsync();
+                    ViewBag.ServicesList = (listResponse.Data ?? Enumerable.Empty<Services>()).ToList();
+                    return View(model);
+                }
+
+                return RedirectToAction("Service");
             }
-
-            await _context.SaveChangesAsync();
-            return RedirectToAction("Service");
+            catch (Exception)
+            {
+                TempData["ErrorMessage"] = "An unexpected error occurred while saving the service.";
+                return RedirectToAction("Service");
+            }
         }
 
         // DELETE - Service
@@ -152,21 +149,27 @@ namespace Event_Management.Controllers
         [Route("admin/services/delete/{id}")]
         public async Task<IActionResult> DeleteService(Guid id)
         {
-            var user = await GetAdminUser();
-            if (user == null)
+            try
             {
-                return RedirectToAction("Index", "Home");
+                var user = await GetAdminUser();
+                if (user == null)
+                    return RedirectToAction("Index", "Home");
+
+                var result = await _servService.DeleteAsync(id);
+                if (!result.Success)
+                {
+                    TempData["ErrorMessage"] = result.Message;
+                }
+
+                return RedirectToAction("Service");
             }
-
-            var service = await _context.Services.FindAsync(id);
-            if (service == null)
-                return NotFound();
-
-            _context.Services.Remove(service);
-            await _context.SaveChangesAsync();
-
-            return RedirectToAction("Service");
+            catch (Exception)
+            {
+                TempData["ErrorMessage"] = "An unexpected error occurred while deleting the service.";
+                return RedirectToAction("Service");
+            }
         }
+
 
         // GET: Provide
         [HttpGet]
@@ -326,7 +329,6 @@ namespace Event_Management.Controllers
             }
             catch (Exception ex)
             {
-                // Optionally log the error here
                 TempData["ErrorMessage"] = "An unexpected error occurred while loading the gallery.";
                 return RedirectToAction("Index", "Home");
             }
@@ -427,7 +429,6 @@ namespace Event_Management.Controllers
             }
             catch (Exception ex)
             {
-                // Optionally log the error here
                 TempData["ErrorMessage"] = "An unexpected error occurred while deleting the gallery.";
                 return RedirectToAction("Gallery");
             }

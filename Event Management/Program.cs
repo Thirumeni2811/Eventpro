@@ -1,14 +1,13 @@
 using Eventpro.DataAccess;
-using Eventpro.DataAccess.Repositories;
 using Eventpro.Domain.Interfaces.IGallery;
 using Eventpro.Domain.Interfaces.IUser;
+using Eventpro.Domain.Interfaces.IServ;
 using Eventpro.Domain.ResponseFormat;
 using Eventpro.Service;
 using Eventpro.Service.Constants;
 using Eventpro.Service.Helpers;
 using Eventpro.Service.Responses;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,11 +31,13 @@ builder.Services.AddScoped<JwtHelper>();
 // Register Repositories (DataAccess Layer)
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IGalleryRepository, GalleryRepository>();
+builder.Services.AddScoped<IServRepository, ServRepository>();
 
 // Register Services (Service Layer)
 builder.Services.AddScoped<IServiceResponseFactory, ServiceResponseFactory>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IGalleryService, GalleryService>();
+builder.Services.AddScoped<IServService, ServService>();
 
 var app = builder.Build();
 
