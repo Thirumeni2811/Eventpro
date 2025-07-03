@@ -1,8 +1,8 @@
-﻿using Event_Management.Data;
-using Event_Management.Helpers;
+﻿using Event_Management.Helpers;
 using Eventpro.Domain.Interfaces.IGallery;
 using Eventpro.Domain.Interfaces.IProvide;
 using Eventpro.Domain.Interfaces.IServ;
+using Eventpro.Domain.Interfaces.ITicket;
 using Eventpro.Domain.Interfaces.IUser;
 using Eventpro.Domain.Models;
 using Eventpro.Domain.ResponseFormat;
@@ -19,14 +19,16 @@ namespace Event_Management.Controllers
         private readonly IProvideService _provideService;
         private readonly IGalleryService _galleryService;
         private readonly IUserService _userService;
+        private readonly ITicketRepository _ticketService;
         private readonly IUserRepository _userRepository;
 
-        public AdminController(IServService servService, IProvideService provideService, IGalleryService galleryService, IUserService userService, IUserRepository userRepository)
+        public AdminController(IServService servService, IProvideService provideService, IGalleryService galleryService, IUserService userService, ITicketRepository ticketService, IUserRepository userRepository)
         {
             _servService = servService;
             _provideService = provideService;
             _galleryService = galleryService;
             _userService = userService;
+            _ticketService = ticketService;
             _userRepository = userRepository;
         }
 
@@ -668,84 +670,6 @@ namespace Event_Management.Controllers
             return View();
         }
 
-
-        // GET: Tickets
-        [HttpGet("admin/tickets")]
-        public async Task<IActionResult> Ticket( string ticketId, string eventId, string eventName, string organizerName, string buyerName)
-        {
-            var user = await GetAdminUser();
-            if (user == null)
-            {
-                return RedirectToAction("Index", "Home");
-            }
-
-            var query = _context.Tickets
-                .Include(t => t.Event)
-                .Include(t => t.User)
-                .AsQueryable();
-
-            if (!string.IsNullOrWhiteSpace(ticketId) && Guid.TryParse(ticketId.Trim(), out var tId))
-            {
-                query = query.Where(t => t.Id == tId);
-            }
-
-            if (!string.IsNullOrWhiteSpace(eventId) && Guid.TryParse(eventId.Trim(), out var eId))
-            {
-                query = query.Where(t => t.EventId == eId);
-            }
-
-            if (!string.IsNullOrWhiteSpace(eventName))
-            {
-                eventName = eventName.Trim();
-                query = query.Where(t => t.Event.Name.Contains(eventName));
-            }
-
-            if (!string.IsNullOrWhiteSpace(organizerName))
-            {
-                organizerName = organizerName.Trim();
-                query = query.Where(t => t.Event.User.Name.Contains(organizerName));
-            }
-
-            if (!string.IsNullOrWhiteSpace(buyerName))
-            {
-                buyerName = buyerName.Trim();
-                query = query.Where(t => t.User.Name.Contains(buyerName));
-            }
-
-
-            var ticketList = await query
-                .OrderByDescending(t => t.PurchaseDate)
-                .ToListAsync();
-
-            // Load dropdown data
-            var organizers = await _context.Users
-                .Where(u => u.Role == "Organizer")
-                .OrderBy(u => u.Name)
-                .ToListAsync();
-
-            var buyers = await _context.Users
-                .Where(u => u.Role == "User")
-                .OrderBy(u => u.Name)
-                .ToListAsync();
-
-            var events = await _context.Events
-                .OrderBy(e => e.Name)
-                .ToListAsync();
-
-            ViewBag.Organizers = organizers;
-            ViewBag.Buyers = buyers;
-            ViewBag.Events = events;
-            ViewBag.TicketList = ticketList;
-
-            ViewData["TicketId"] = ticketId;
-            ViewData["EventId"] = eventId;
-            ViewData["EventName"] = eventName;
-            ViewData["OrganizerName"] = organizerName;
-            ViewData["BuyerName"] = buyerName;
-
-            return View();
-        }
-
         // GET - Event Details
         [HttpGet]
         [Route("admin/event-details/{id}")]
@@ -797,6 +721,69 @@ namespace Event_Management.Controllers
             };
 
             return View(model);
+        }
+
+        /*--------------------------------------
+                     T I C K E T S
+        --------------------------------------*/
+
+        [HttpGet("admin/tickets")]
+        public async Task<IActionResult> Ticket(
+            string ticketId,
+            string eventId,
+            string eventName,
+            string organizerName,
+            string buyerName)
+        {
+            var user = await GetAdminUser();
+            if (user == null)
+            {
+                return RedirectToAction("Index", "Home");
+            }
+
+            var ticketsResponse = await _ticketService.GetAllAsync(
+                user.Role,
+                ticketId,
+                eventId,
+                eventName,
+                organizerName,
+                buyerName
+            );
+
+            if (!ticketsResponse.Success)
+            {
+                TempData["ErrorMessage"] = ticketsResponse.Message;
+                return RedirectToAction("Index", "Home");
+            }
+
+            // Fetch dropdown data
+            var allUsersResponse = await _userService.GetAllUsersAsync(user.Role);
+            var allEventsResponse = await _eventService.GetAllAsync();
+
+            ViewBag.Organizers = allUsersResponse.Data?
+                .Where(u => u.Role == "Organizer")
+                .OrderBy(u => u.Name)
+                .ToList();
+
+            ViewBag.Buyers = allUsersResponse.Data?
+                .Where(u => u.Role == "User")
+                .OrderBy(u => u.Name)
+                .ToList();
+
+            ViewBag.Events = allEventsResponse.Data?
+                .OrderBy(e => e.Name)
+                .ToList();
+
+            ViewBag.TicketList = ticketsResponse.Data;
+
+            // Preserve filters for view
+            ViewData["TicketId"] = ticketId;
+            ViewData["EventId"] = eventId;
+            ViewData["EventName"] = eventName;
+            ViewData["OrganizerName"] = organizerName;
+            ViewData["BuyerName"] = buyerName;
+
+            return View();
         }
 
         /*--------------------------------------

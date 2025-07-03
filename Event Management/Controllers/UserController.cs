@@ -16,7 +16,7 @@ namespace Event_Management.Controllers
             _context = context;
         }
 
-        // Get the events by organisation Id (token)
+        // Get the events by User Id (token)
         [HttpGet]
         [Route("my-tickets")]
         public async Task<IActionResult> UserEvent(string eventName, string status)

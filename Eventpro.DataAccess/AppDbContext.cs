@@ -13,6 +13,8 @@ namespace Eventpro.DataAccess
         public DbSet<Gallery> Gallery { get; set; }
         public DbSet<Services> Services { get; set; }
         public DbSet<Provides> Provides { get; set; }
+        public DbSet<Tickets> Tickets { get; set; }
+        public DbSet<Events> Events { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -55,6 +57,53 @@ namespace Eventpro.DataAccess
                 entity.Property(e => e.Type).IsRequired();
                 entity.Property(e => e.Name).IsRequired();
                 entity.Property(e => e.Description).IsRequired();
+            });
+
+            // Tickets table configuration
+            modelBuilder.Entity<Tickets>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.EventId)
+                    .IsRequired();
+
+                entity.Property(e => e.UserId)
+                    .IsRequired();
+
+                entity.Property(e => e.Quantity)
+                    .IsRequired();
+
+                entity.Property(e => e.Type)
+                    .IsRequired();
+
+                entity.Property(e => e.TotalPrice)
+                    .HasColumnType("decimal(18,2)")
+                    .IsRequired();
+
+                entity.Property(e => e.TicketPrice)
+                    .HasColumnType("decimal(18,2)")
+                    .IsRequired();
+
+                entity.Property(e => e.BookingFee)
+                    .HasColumnType("decimal(18,2)")
+                    .IsRequired();
+
+                entity.Property(e => e.PurchaseDate)
+                    .IsRequired();
+
+                entity.Property(e => e.PaymentStatus)
+                    .HasMaxLength(50);
+
+                // Relationships
+                entity.HasOne(e => e.Event)
+                    .WithMany()
+                    .HasForeignKey(e => e.EventId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.User)
+                    .WithMany()
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
         }
     }

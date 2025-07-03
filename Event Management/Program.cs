@@ -9,6 +9,7 @@ using Eventpro.Service.Helpers;
 using Eventpro.Service.Responses;
 using Microsoft.EntityFrameworkCore;
 using Eventpro.Domain.Interfaces.IProvide;
+using Eventpro.Domain.Interfaces.ITicket;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -34,6 +35,7 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IGalleryRepository, GalleryRepository>();
 builder.Services.AddScoped<IServRepository, ServRepository>();
 builder.Services.AddScoped<IProvideRepository, ProvideRepository>();
+builder.Services.AddScoped<ITicketRepository, TicketRepository>();
 
 // Register Services (Service Layer)
 builder.Services.AddScoped<IServiceResponseFactory, ServiceResponseFactory>();
@@ -41,6 +43,7 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IGalleryService, GalleryService>();
 builder.Services.AddScoped<IServService, ServService>();
 builder.Services.AddScoped<IProvideService, ProvideService>();
+builder.Services.AddScoped<ITicketService, ITicketService>();
 
 var app = builder.Build();
 
