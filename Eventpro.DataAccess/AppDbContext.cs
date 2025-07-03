@@ -105,6 +105,17 @@ namespace Eventpro.DataAccess
                     .HasForeignKey(e => e.UserId)
                     .OnDelete(DeleteBehavior.Cascade);
             });
+
+            // Events table config
+            modelBuilder.Entity<Events>(entity =>
+            {
+                // Relationships
+                entity.HasOne(e => e.User)
+                    .WithMany()
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
         }
     }
 }

@@ -1,19 +1,25 @@
-﻿using Event_Management.Data;
-using Event_Management.Helpers;
-using Event_Management.Models;
+﻿using Event_Management.Helpers;
+using Eventpro.Domain.Interfaces.IEvents;
+using Eventpro.Domain.Interfaces.ITicket;
+using Eventpro.Domain.Interfaces.IUser;
+using Eventpro.Domain.Models;
+using Eventpro.Service;
 using Microsoft.AspNetCore.Mvc;
-using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 
 namespace Event_Management.Controllers
 {
     public class OrganizerController : Controller
     {
-        private readonly AppDbContext _context;
+        private readonly IUserService _userService;
+        private readonly IEventService _eventService;
+        private readonly ITicketService _ticketService;
 
-        public OrganizerController(AppDbContext context)
+        public OrganizerController(IEventService eventService, IUserService userService, ITicketService ticketService)
         {
-            _context = context;
+            _userService = userService;
+            _eventService = eventService;
+            _ticketService = ticketService;
         }
 
         // Get the events by organisation Id (token)
@@ -21,68 +27,41 @@ namespace Event_Management.Controllers
         [Route("organisation")]
         public async Task<IActionResult> OrgEvents(string eventName, string status)
         {
-            Guid userId;
-
             try
             {
-                userId = TokenHelper.GetIdFromToken(Request);
+                Guid userId = TokenHelper.GetIdFromToken(Request);
+
+                var userResponse = await _userService.GetUserByIdAsync(userId);
+
+                if (!userResponse.Success || userResponse.Data == null || userResponse.Data.Role != "Organizer")
+                {
+                    return RedirectToAction("Create", "Account");
+                }
+
+                var eventsResponse = await _eventService.GetEventsByUserIdAsync(
+                    userId,
+                    eventName,
+                    status);
+
+                if (!eventsResponse.Success)
+                {
+                    TempData["ErrorMessage"] = eventsResponse.Message;
+                    return RedirectToAction("Create", "Account");
+                }
+
+                ViewBag.User = userResponse.Data;
+                ViewBag.Events = eventsResponse.Data ?? Enumerable.Empty<Events>();
+                ViewBag.SearchQuery = eventName;
+                ViewBag.StatusFilter = status;
+                ViewBag.Role = userResponse.Data.Role;
+
+                return View();
             }
             catch (Exception)
             {
+                TempData["ErrorMessage"] = "An unexpected error occurred.";
                 return RedirectToAction("Create", "Account");
             }
-
-            var user = await _context.Users
-                .FirstOrDefaultAsync(o => o.Id == userId);
-
-            if (user == null || user.Role != "Organizer")
-            {
-                return RedirectToAction("Create", "Account");
-            }
-
-            var eventsQuery = _context.Events
-                .Where(e => e.UserId == userId);
-
-            if (!string.IsNullOrWhiteSpace(eventName))
-            {
-                eventName = eventName.Trim();
-                eventsQuery = eventsQuery
-                    .Where(e => e.Name.Contains(eventName));
-            }
-
-            if (!string.IsNullOrWhiteSpace(status))
-            {
-                eventsQuery = eventsQuery
-                    .Where(e => e.Status == status);
-            }
-
-            var events = await eventsQuery.ToListAsync();
-
-            bool isUpdated = false;
-            foreach (var ev in events)
-            {
-                if (ev.Status == "Upcoming" && ev.DateTime < DateTime.Now)
-                {
-                    ev.Status = "Completed";
-                    isUpdated = true;
-                }
-            }
-
-            if (isUpdated)
-            {
-                await _context.SaveChangesAsync();
-            }
-
-            var viewModel = new EventsView
-            {
-                User = user,
-                Events = events,
-                SearchQuery = eventName,
-                StatusFilter = status,
-                Role = user.Role
-            };
-
-            return View(viewModel);
         }
 
         // Get the event by event id
@@ -90,55 +69,59 @@ namespace Event_Management.Controllers
         [Route("event/{id}")]
         public async Task<IActionResult> Event(Guid id)
         {
-            Guid userId;
-
             try
             {
-                userId = TokenHelper.GetIdFromToken(Request);
+                Guid userId = TokenHelper.GetIdFromToken(Request);
+
+                var userResponse = await _userService.GetUserByIdAsync(userId);
+                if (!userResponse.Success || userResponse.Data == null || userResponse.Data.Role != "Organizer")
+                {
+                    return NotFound("User not found or not authorized.");
+                }
+
+                var user = userResponse.Data;
+
+                var eventResponse = await _eventService.GetEventByIdAsync(id);
+                if (!eventResponse.Success || eventResponse.Data == null || eventResponse.Data.UserId != userId)
+                {
+                    return NotFound("Event not found or not owned by you.");
+                }
+
+                var eventData = eventResponse.Data;
+
+                var ticketsResponse = await _ticketService.GetTicketsByEventIdAsync(id, "Organizer");
+                if (!ticketsResponse.Success)
+                {
+                    TempData["ErrorMessage"] = ticketsResponse.Message;
+                    return RedirectToAction("OrgEvents");
+                }
+
+                var tickets = ticketsResponse.Data?.ToList() ?? new List<Tickets>();
+
+                int ticketsCount = tickets.Sum(t => t.Quantity);
+
+                var ticketCountsResponse = await _ticketService.GetTicketTypeCountsByEventIdAsync(id);
+                if (!ticketCountsResponse.Success)
+                {
+                    TempData["ErrorMessage"] = ticketCountsResponse.Message;
+                    return RedirectToAction("OrgEvents");
+                }
+
+                var ticketTypeCounts = ticketCountsResponse.Data ?? Enumerable.Empty<(string Type, int Quantity)>();
+
+                ViewBag.User = user;
+                ViewBag.Event = eventData;
+                ViewBag.Role = user.Role;
+                ViewBag.TicketsCount = ticketsCount;
+                ViewBag.TicketTypeCounts = ticketTypeCounts;
+
+                return View();
             }
             catch (Exception)
             {
-                return RedirectToAction("Create", "Account");
+                TempData["ErrorMessage"] = "An unexpected error occurred.";
+                return RedirectToAction("OrgEvents");
             }
-
-            var user = await _context.Users.FindAsync(userId);
-            if (user == null || user.Role != "Organizer")
-            {
-                return NotFound("User not found.");
-            }
-
-            var eventData = await _context.Events
-                                          .FirstOrDefaultAsync(e => e.Id == id && e.UserId == userId);
-
-            if (eventData == null)
-            {
-                return NotFound("Event not found");
-            }
-
-            var ticketsCount = await _context.Tickets
-                .Where(t => t.EventId == id)
-                .SumAsync(t => (int?)t.Quantity) ?? 0;
-
-            var ticketsByType = await _context.Tickets
-                .Where(t => t.EventId == id)
-                .GroupBy(t => t.Type)
-                .Select(g => new TicketTypeCount
-                {
-                    Type = g.Key,
-                    Quantity = g.Sum(t => t.Quantity)
-                })
-                .ToListAsync();
-
-            var model = new EventsView
-            {
-                User = user,
-                Event = eventData,
-                Role = user.Role,
-                TicketsCount = ticketsCount,
-                TicketTypeCounts = ticketsByType
-            };
-
-            return View(model);
         }
 
         // Get the event by event id for edit
@@ -146,186 +129,104 @@ namespace Event_Management.Controllers
         [Route("update-event/{id}")]
         public async Task<IActionResult> Update(Guid id)
         {
-            Guid userId;
             try
             {
-                userId = TokenHelper.GetIdFromToken(Request);
+                Guid userId = TokenHelper.GetIdFromToken(Request);
+
+                var userResponse = await _userService.GetUserByIdAsync(userId);
+                if (!userResponse.Success || userResponse.Data == null || userResponse.Data.Role != "Organizer")
+                {
+                    return RedirectToAction("Create", "Account");
+                }
+
+                var eventResponse = await _eventService.GetEventByIdAsync(id);
+                if (!eventResponse.Success || eventResponse.Data == null || eventResponse.Data.UserId != userId)
+                {
+                    TempData["ErrorMessage"] = "Event not found or not authorized.";
+                    return RedirectToAction("OrgEvents");
+                }
+
+                ViewBag.Event = eventResponse.Data;
+
+                return View();
             }
-            catch
+            catch (Exception)
             {
-                return RedirectToAction("Create", "Account");
+                TempData["ErrorMessage"] = "An unexpected error occurred.";
+                return RedirectToAction("OrgEvents");
             }
-   
-            var user = await _context.Users.FindAsync(userId);
-
-            if (user == null || user.Role != "Organizer")
-            {
-                return RedirectToAction("Create", "Account");
-            }
-
-            var eventData = await _context.Events
-                .FirstOrDefaultAsync(e => e.Id == id && e.UserId == userId);
-
-            if (eventData == null)
-            {
-                return NotFound("Event not found");
-            }
-
-            return View(eventData);
         }
-
 
         // Update the event by event id
         [HttpPost]
         [Route("update-event/{id}")]
-        public async Task<IActionResult> Update(Guid id, Eventsss model)
+        public async Task<IActionResult> Update(Guid id, Events model, IFormFile BannerFile)
         {
-            Guid userId;
             try
             {
-                userId = TokenHelper.GetIdFromToken(Request);
-            }
-            catch
-            {
-                return RedirectToAction("Create", "Account");
-            }
+                Guid userId = TokenHelper.GetIdFromToken(Request);
 
-            var user = await _context.Users.FindAsync(userId);
-            if (user == null || user.Role != "Organizer")
-            {
-                return RedirectToAction("Create", "Account");
-            }
-
-            var eventData = await _context.Events
-                                          .FirstOrDefaultAsync(e => e.Id == id && e.UserId == userId);
-            if (eventData == null)
-            {
-                return NotFound("Event not found or unauthorized.");
-            }
-
-            // Validations
-            EventValidationHelper.ValidateBasics(model, ModelState);
-            EventValidationHelper.ValidateVenue(model, ModelState);
-            EventValidationHelper.ValidateTickets(model, ModelState);
-            EventValidationHelper.ValidateProgram(model, ModelState);
-            EventValidationHelper.ValidateCatering(model, ModelState);
-
-            // File upload
-            if (model.BannerFile != null && model.BannerFile.Length > 0)
-            {
-                try
+                var userResponse = await _userService.GetUserByIdAsync(userId);
+                if (!userResponse.Success || userResponse.Data == null || userResponse.Data.Role != "Organizer")
                 {
-                    var bannerPath = await FileUploadHelper.SaveFileAsync(model.BannerFile, "banners");
-                    model.Banner = bannerPath;
+                    return RedirectToAction("Create", "Account");
                 }
-                catch
+
+                EventValidationHelper.ValidateBasics(model, ModelState);
+                EventValidationHelper.ValidateVenue(model, ModelState);
+                EventValidationHelper.ValidateTickets(model, ModelState);
+                EventValidationHelper.ValidateProgram(model, ModelState);
+                EventValidationHelper.ValidateCatering(model, ModelState);
+
+                if (!ModelState.IsValid)
                 {
-                    ModelState.AddModelError("BannerFile", "Invalid banner file.");
+                    return View(model);
                 }
-            }
-            else
-            {
-                model.Banner = eventData.Banner;
-            }
 
-
-            EventValidationHelper.ValidatePromotions(model, ModelState);
-
-            if (!ModelState.IsValid)
-            {
-                // Log each error to the console
-                foreach (var kvp in ModelState)
+                var existingResponse = await _eventService.GetEventByIdAsync(id);
+                if (!existingResponse.Success || existingResponse.Data == null)
                 {
-                    var key = kvp.Key;
-                    foreach (var error in kvp.Value.Errors)
+                    TempData["ErrorMessage"] = "Event not found.";
+                    return RedirectToAction("OrgEvents");
+                }
+
+                if (BannerFile != null && BannerFile.Length > 0)
+                {
+                    try
                     {
-                        Console.WriteLine($"Validation error on '{key}': {error.ErrorMessage}");
+                        model.Banner = await FileUploadHelper.SaveFileAsync(BannerFile, "banners");
+                    }
+                    catch
+                    {
+                        ModelState.AddModelError("BannerFile", "Invalid banner file.");
+                        return View(model);
                     }
                 }
+                else
+                {
+                    model.Banner = existingResponse.Data.Banner;
+                }
 
-                return View(model);
-            }
+                EventValidationHelper.ValidatePromotions(model, BannerFile, ModelState);
 
+                model.Id = id;
+                model.UserId = userId;
 
-            try
-            {
-                // Basic Info
-                eventData.Name = model.Name;
-                eventData.Type = model.Type;
-                eventData.Description = model.Description;
-                eventData.Theme = model.Theme;
-                eventData.DateTime = model.DateTime;
-                eventData.Duration = model.Duration;
-                eventData.Venue = model.Venue;
+                var updateResponse = await _eventService.UpdateEventAsync(
+                    model, "Organizer", userId);
 
-                // Venue
-                eventData.VenueName = model.VenueName;
-                eventData.Address = model.Address;
-                eventData.Environment = model.Environment;
-                eventData.Capacity = model.Capacity;
-                eventData.Accessibility = model.Accessibility;
-
-                // Tickets
-                eventData.IsPaid = model.IsPaid;
-                eventData.TicketPricing = model.TicketPricing;
-                eventData.Payment = model.Payment;
-                eventData.MaxAttendees = model.MaxAttendees;
-                eventData.RegistrationDeadline = model.RegistrationDeadline;
-                eventData.CancellationPolicy = model.CancellationPolicy;
-
-                // Schedule
-                eventData.Agenda = model.Agenda;
-                eventData.Activities = model.Activities;
-                eventData.Speakers = model.Speakers;
-                eventData.Breaks = model.Breaks;
-
-                // Promotions
-                if (!string.IsNullOrEmpty(model.Banner))
-                    eventData.Banner = model.Banner;
-
-                eventData.Platforms = model.Platforms;
-                eventData.Audience = model.Audience;
-                eventData.Sponsors = model.Sponsors;
-
-                // Technical
-                eventData.SoundSystem = model.SoundSystem;
-                eventData.Projection = model.Projection;
-                eventData.LiveStreaming = model.LiveStreaming;
-                eventData.Internet = model.Internet;
-                eventData.PowerBackup = model.PowerBackup;
-
-                // Staff
-                eventData.Volunteers = model.Volunteers;
-                eventData.Security = model.Security;
-                eventData.Coordinators = model.Coordinators;
-                eventData.Medical = model.Medical;
-
-                // Catering
-                eventData.Veg = model.Veg;
-                eventData.NonVeg = model.NonVeg;
-                eventData.Menu = model.Menu;
-                eventData.ServingStyle = model.ServingStyle;
-                eventData.GuestCount = model.GuestCount;
-
-                // Post Event
-                eventData.Feedback = model.Feedback;
-                eventData.Media = model.Media;
-                eventData.Report = model.Report;
-                eventData.Thanks = model.Thanks;
-
-                //eventData.Status = model.Status;
-                eventData.Message = model.Message;
-
-                // Save
-                _context.Events.Update(eventData);
-                await _context.SaveChangesAsync();
+                if (!updateResponse.Success)
+                {
+                    ModelState.AddModelError("", updateResponse.Message);
+                    return View(model);
+                }
 
                 return RedirectToAction("OrgEvents", "Organizer");
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Update error: {ex.Message}");
-                ModelState.AddModelError("", "An error occurred while saving to the database.");
+                ModelState.AddModelError("", "An unexpected error occurred.");
                 return View(model);
             }
         }

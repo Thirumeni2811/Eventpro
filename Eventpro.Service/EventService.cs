@@ -74,23 +74,63 @@ namespace Eventpro.Service
 
         // GET EVENT BY USER ID
         public async Task<IServiceResponse<IEnumerable<Events>>> GetEventsByUserIdAsync(
-            Guid userId, string actingRole)
+            Guid userId,
+            string eventName,
+            string status)
         {
             try
             {
-                if (actingRole != "Organizer")
-                    return _responseFactory.CreateResponse<IEnumerable<Events>>(
-                        false, "Unauthorized.", ActionType.Unauthorized
-                    );
+                var events = await _repository.GetByUserIdAsync(userId);
 
-                var list = await _repository.GetByUserIdAsync(userId);
-                return _responseFactory.CreateResponse(
-                    true, "Events retrieved.", ActionType.Retrieved, list
-                );
+                if (events == null)
+                {
+                    return _responseFactory.CreateResponse<IEnumerable<Events>>(
+                        true,
+                        "No events found.",
+                        ActionType.Retrieved,
+                        Enumerable.Empty<Events>());
+                }
+
+                // Filter
+                var filtered = events.AsQueryable();
+
+                if (!string.IsNullOrWhiteSpace(eventName))
+                {
+                    eventName = eventName.Trim();
+                    filtered = filtered.Where(e => e.Name.Contains(eventName));
+                }
+
+                if (!string.IsNullOrWhiteSpace(status))
+                {
+                    filtered = filtered.Where(e => e.Status == status);
+                }
+
+                var filteredList = filtered.ToList(); 
+
+                bool isUpdated = false;
+                foreach (var ev in filteredList)
+                {
+                    if (ev.Status == "Upcoming" && ev.DateTime < DateTime.UtcNow)
+                    {
+                        ev.Status = "Completed";
+                        isUpdated = true;
+                    }
+                }
+
+                if (isUpdated)
+                {
+                    await _repository.SaveChangesAsync();
+                }
+
+                return _responseFactory.CreateResponse<IEnumerable<Events>>(
+                    true,
+                    "Events retrieved.",
+                    ActionType.Retrieved,
+                    filteredList.AsEnumerable());
             }
             catch (Exception ex)
             {
-                throw new ServiceException("Error retrieving user events.", ex);
+                throw new ServiceException("Error retrieving events with filter.", ex);
             }
         }
 
@@ -130,21 +170,17 @@ namespace Eventpro.Service
             {
                 if (actingRole != "Organizer")
                     return _responseFactory.CreateResponse<Events>(
-                        false, "Unauthorized.", ActionType.Unauthorized
-                    );
+                        false, "Unauthorized.", ActionType.Unauthorized);
 
                 var existing = await _repository.GetByIdAsync(evt.Id);
                 if (existing == null)
                     return _responseFactory.CreateResponse<Events>(
-                        false, "Event not found.", ActionType.NotFound
-                    );
+                        false, "Event not found.", ActionType.NotFound);
 
                 if (existing.UserId != actingUserId)
                     return _responseFactory.CreateResponse<Events>(
-                        false, "Cannot update another’s event.", ActionType.Forbidden
-                    );
+                        false, "Cannot update another’s event.", ActionType.Forbidden);
 
-                // copy only the fields you allow to update...
                 existing.Name = evt.Name;
                 existing.Type = evt.Type;
                 existing.Description = evt.Description;
@@ -189,20 +225,19 @@ namespace Eventpro.Service
                 existing.Report = evt.Report;
                 existing.Thanks = evt.Thanks;
                 existing.Message = evt.Message;
-                // leave Status, CreatedAt, etc. untouched
 
                 await _repository.UpdateAsync(existing);
                 await _repository.SaveChangesAsync();
 
                 return _responseFactory.CreateResponse(
-                    true, "Event updated.", ActionType.Updated, existing
-                );
+                    true, "Event updated.", ActionType.Updated, existing);
             }
             catch (Exception ex)
             {
                 throw new ServiceException("Error updating event.", ex);
             }
         }
+
 
         // DELETE EVENT
         public async Task<IServiceResponse<bool>> DeleteEventAsync(

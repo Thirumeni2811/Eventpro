@@ -1,4 +1,5 @@
 ﻿using Event_Management.Helpers;
+using Eventpro.Domain.Interfaces.IEvents;
 using Eventpro.Domain.Interfaces.IGallery;
 using Eventpro.Domain.Interfaces.IProvide;
 using Eventpro.Domain.Interfaces.IServ;
@@ -9,6 +10,7 @@ using Eventpro.Domain.ResponseFormat;
 using Eventpro.Service;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Data.Entity;
 
 namespace Event_Management.Controllers
 {
@@ -20,15 +22,17 @@ namespace Event_Management.Controllers
         private readonly IGalleryService _galleryService;
         private readonly IUserService _userService;
         private readonly ITicketService _ticketService;
+        private readonly IEventService _eventService;
         private readonly IUserRepository _userRepository;
 
-        public AdminController(IServService servService, IProvideService provideService, IGalleryService galleryService, IUserService userService, ITicketService ticketService, IUserRepository userRepository)
+        public AdminController(IServService servService, IProvideService provideService, IGalleryService galleryService, IUserService userService, IEventService eventService, ITicketService ticketService, IUserRepository userRepository)
         {
             _servService = servService;
             _provideService = provideService;
             _galleryService = galleryService;
             _userService = userService;
             _ticketService = ticketService;
+            _eventService = eventService;
             _userRepository = userRepository;
         }
 
@@ -368,7 +372,7 @@ namespace Event_Management.Controllers
                         model.Banner = await FileUploadHelper.SaveFileAsync(BannerFile, "gallery");
                     }
 
-                    var updateResult = await _galleryService.UpdateAsync(model);
+                    var updateResult = await _galleryService.UpdateAsync(model, user.Role);
                     if (!updateResult.Success)
                     {
                         ModelState.AddModelError("", updateResult.Message);
@@ -390,7 +394,7 @@ namespace Event_Management.Controllers
 
                     model.Banner = await FileUploadHelper.SaveFileAsync(BannerFile, "gallery");
 
-                    var createResult = await _galleryService.CreateAsync(model);
+                    var createResult = await _galleryService.CreateAsync(model, user.Role);
                     if (!createResult.Success)
                     {
                         ModelState.AddModelError("", createResult.Message);
@@ -591,139 +595,126 @@ namespace Event_Management.Controllers
                       E V E N T S
         --------------------------------------*/
 
-        // GET: Events
+        // GET - All Events
         [HttpGet("/admin/events")]
-        public async Task<IActionResult> Events( string eventId, string name, string organizedBy, string type, string venue, string status, string isPaid)
+        public async Task<IActionResult> Events(
+            Guid? eventId,
+            string name,
+            string organizedBy,
+            string type,
+            string venue,
+            string status,
+            string isPaid)
         {
-            var user = await GetAdminUser();
-            if (user == null)
+            try
             {
+                var user = await GetAdminUser();
+                if (user == null)
+                {
+                    return RedirectToAction("Index", "Home");
+                }
+
+                var eventsResponse = await _eventService.GetAllEventsAsync(
+                    actingRole: user.Role,
+                    eventId: eventId,
+                    name: name,
+                    organizedBy: organizedBy,
+                    type: type,
+                    venue: venue,
+                    status: status,
+                    isPaid: isPaid
+                );
+
+                if (!eventsResponse.Success)
+                {
+                    TempData["ErrorMessage"] = eventsResponse.Message;
+                    return RedirectToAction("Index", "Home");
+                }
+
+                var allUsersResponse = await _userService.GetAllUsersAsync(user.Role);
+
+                ViewBag.Organizers = allUsersResponse.Data?
+                    .Where(u => u.Role == "Organizer")
+                    .OrderBy(u => u.Name)
+                    .ToList();
+
+                ViewBag.EventsList = eventsResponse.Data?.ToList();
+                ViewBag.EventsCount = eventsResponse.Data?.Count() ?? 0;
+
+                // Preserve filters for the view
+                ViewData["EventId"] = eventId?.ToString();
+                ViewData["Name"] = name;
+                ViewData["OrganizedBy"] = organizedBy;
+                ViewData["Type"] = type;
+                ViewData["Venue"] = venue;
+                ViewData["Status"] = status;
+                ViewData["IsPaid"] = isPaid;
+
+                return View();
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = "An error occurred while loading events.";
                 return RedirectToAction("Index", "Home");
             }
-
-            var query = _context.Events
-                .Include(e => e.User)
-                .AsQueryable();
-
-            if (!string.IsNullOrWhiteSpace(eventId) && Guid.TryParse(eventId.Trim(), out var eId))
-            {
-                query = query.Where(e => e.Id == eId);
-            }
-
-            if (!string.IsNullOrWhiteSpace(name))
-            {
-                name = name.Trim();
-                query = query.Where(e => e.Name.Contains(name));
-            }
-
-            if (!string.IsNullOrWhiteSpace(organizedBy))
-            {
-                organizedBy = organizedBy.Trim();
-                query = query.Where(e => e.User.Name.Contains(organizedBy));
-            }
-
-            if (!string.IsNullOrWhiteSpace(type))
-            {
-                type = type.Trim();
-                query = query.Where(e => e.Type == type);
-            }
-
-            if (!string.IsNullOrWhiteSpace(venue))
-            {
-                venue = venue.Trim();
-                query = query.Where(e => e.Venue.Contains(venue));
-            }
-
-            if (!string.IsNullOrWhiteSpace(status))
-            {
-                status = status.Trim();
-                query = query.Where(e => e.Status == status);
-            }
-
-            if (!string.IsNullOrWhiteSpace(isPaid))
-            {
-                isPaid = isPaid.Trim();
-                query = query.Where(e => e.IsPaid == isPaid);
-            }
-
-            var eventList = await query
-                .OrderByDescending(e => e.CreatedAt)
-                .ToListAsync();
-
-            var organizers = await _context.Users
-                .Where(u => u.Role == "Organizer")
-                .OrderBy(u => u.Name)
-                .ToListAsync();
-
-            var count = await query.CountAsync();
-            ViewBag.EventsCount = count;
-
-            ViewBag.EventsList = await query.ToListAsync();
-            ViewBag.Organizers = organizers;
-            ViewBag.EventList = eventList;
-
-            ViewData["EventId"] = eventId;
-            ViewData["Name"] = name;
-            ViewData["OrganizedBy"] = organizedBy;
-            ViewData["Type"] = type;
-            ViewData["Venue"] = venue;
-            ViewData["Status"] = status;
-            ViewData["IsPaid"] = isPaid;
-
-            return View();
         }
 
-        // GET - Event Details
+        // GET - Event by eventId
         [HttpGet]
         [Route("admin/event-details/{id}")]
         public async Task<IActionResult> EventDetails(Guid id)
         {
-            var user = await GetAdminUser();
-            if (user == null)
+            try
             {
-                return RedirectToAction("Index", "Home");
-            }
-
-            // Get Event
-            var evt = await _context.Events
-                .Include(e => e.User)
-                .FirstOrDefaultAsync(e => e.Id == id);
-
-            if (evt == null)
-            {
-                return NotFound();
-            }
-            
-            var tickets = await _context.Tickets
-                .Include(t => t.User)
-                .Where(t => t.EventId == id)
-                .ToListAsync();
-
-            var ticketTypeCounts = tickets
-                .GroupBy(t => t.Type)
-                .Select(g => new TicketTypeCount
+                var user = await GetAdminUser();
+                if (user == null)
                 {
-                    Type = g.Key,
-                    Quantity = g.Sum(x => x.Quantity)
-                })
-                .ToList();
+                    return RedirectToAction("Index", "Home");
+                }
 
-            var model = new EventsView
-            {
-                Event = evt,
-                Tickets = tickets,
-                TicketsCount = tickets.Sum(t => t.Quantity),
-                TicketTypeCounts = ticketTypeCounts,
-                Organizer = evt.User,
-                RemainingTickets = evt.MaxAttendees.HasValue
+                var eventResponse = await _eventService.GetEventByIdAsync(id);
+                if (!eventResponse.Success || eventResponse.Data == null)
+                {
+                    return NotFound();
+                }
+
+                var evt = eventResponse.Data;
+
+                var ticketsResponse = await _ticketService.GetTicketsByEventIdAsync(id, "Admin");
+                if (!ticketsResponse.Success)
+                {
+                    return BadRequest(ticketsResponse.Message);
+                }
+                var tickets = ticketsResponse.Data.ToList();
+
+                var countsResponse = await _ticketService.GetTicketTypeCountsByEventIdAsync(id);
+                if (!countsResponse.Success)
+                {
+                    return BadRequest(countsResponse.Message);
+                }
+                var ticketTypeCounts = countsResponse.Data
+                    .Select(c => new { c.Type, c.Quantity })
+                    .ToList();
+
+                ViewBag.Event = evt;
+                ViewBag.Tickets = tickets;
+                ViewBag.TicketTypeCounts = ticketTypeCounts;
+                ViewBag.TicketsCount = tickets.Sum(t => t.Quantity);
+                ViewBag.RemainingTickets = evt.MaxAttendees.HasValue
                     ? evt.MaxAttendees - tickets.Sum(t => t.Quantity)
-                    : (int?)null,
-                TotalTicketPrice = tickets.Sum(t => t.TicketPrice * t.Quantity),
-                TotalBookingFee = tickets.Sum(t => t.BookingFee),
-                GrandTotalPrice = tickets.Sum(t => t.TotalPrice)
-            };
+                    : (int?)null;
+                ViewBag.TotalTicketPrice = tickets.Sum(t => t.TicketPrice * t.Quantity);
+                ViewBag.TotalBookingFee = tickets.Sum(t => t.BookingFee);
+                ViewBag.GrandTotalPrice = tickets.Sum(t => t.TotalPrice);
 
-            return View(model);
+                return View();
+            }
+            catch (Exception ex)
+            {
+                // Log error as needed
+                TempData["ErrorMessage"] = "An error occurred while loading event details.";
+                return RedirectToAction("Events");
+            }
         }
 
         /*--------------------------------------
@@ -737,57 +728,64 @@ namespace Event_Management.Controllers
             string eventName,
             string organizerName,
             string buyerName)
-        {
-            var user = await GetAdminUser();
-            if (user == null)
+                {
+            try
             {
+                var user = await GetAdminUser();
+                if (user == null)
+                {
+                    return RedirectToAction("Index", "Home");
+                }
+
+                var ticketsResponse = await _ticketService.GetAllTicketsAsync(
+                    user.Role,
+                    ticketId,
+                    eventId,
+                    eventName,
+                    organizerName,
+                    buyerName
+                );
+
+                if (!ticketsResponse.Success)
+                {
+                    TempData["ErrorMessage"] = ticketsResponse.Message;
+                    return RedirectToAction("Index", "Home");
+                }
+
+                var allUsersResponse = await _userService.GetAllUsersAsync(user.Role);
+                var allEventsResponse = await _eventService.GetAllEventsAsync(user.Role);
+
+                ViewBag.Organizers = allUsersResponse.Data?
+                    .Where(u => u.Role == "Organizer")
+                    .OrderBy(u => u.Name)
+                    .ToList();
+
+                ViewBag.Buyers = allUsersResponse.Data?
+                    .Where(u => u.Role == "User")
+                    .OrderBy(u => u.Name)
+                    .ToList();
+
+                ViewBag.Events = allEventsResponse.Data?
+                    .OrderBy(e => e.Name)
+                    .ToList();
+
+                ViewBag.TicketList = ticketsResponse.Data;
+
+                // Preserve filters for view
+                ViewData["TicketId"] = ticketId?.ToString();
+                ViewData["EventId"] = eventId?.ToString();
+                ViewData["EventName"] = eventName;
+                ViewData["OrganizerName"] = organizerName;
+                ViewData["BuyerName"] = buyerName;
+
+                return View();
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = "An unexpected error occurred while loading tickets.";
                 return RedirectToAction("Index", "Home");
             }
-
-            var ticketsResponse = await _ticketService.GetAllTicketsAsync(
-                user.Role,
-                ticketId,
-                eventId,
-                eventName,
-                organizerName,
-                buyerName
-            );
-
-            if (!ticketsResponse.Success)
-            {
-                TempData["ErrorMessage"] = ticketsResponse.Message;
-                return RedirectToAction("Index", "Home");
-            }
-
-            var allUsersResponse = await _userService.GetAllUsersAsync(user.Role);
-            var allEventsResponse = await _eventService.GetAllAsync();
-
-            ViewBag.Organizers = allUsersResponse.Data?
-                .Where(u => u.Role == "Organizer")
-                .OrderBy(u => u.Name)
-                .ToList();
-
-            ViewBag.Buyers = allUsersResponse.Data?
-                .Where(u => u.Role == "User")
-                .OrderBy(u => u.Name)
-                .ToList();
-
-            ViewBag.Events = allEventsResponse.Data?
-                .OrderBy(e => e.Name)
-                .ToList();
-
-            ViewBag.TicketList = ticketsResponse.Data;
-
-            // Preserve filters for view
-            ViewData["TicketId"] = ticketId?.ToString();
-            ViewData["EventId"] = eventId?.ToString();
-            ViewData["EventName"] = eventName;
-            ViewData["OrganizerName"] = organizerName;
-            ViewData["BuyerName"] = buyerName;
-
-            return View();
         }
-
 
         /*--------------------------------------
                        A D M I N
@@ -807,28 +805,37 @@ namespace Event_Management.Controllers
         [Route("admin-login")]
         public async Task<IActionResult> Login(string email, string password)
         {
-            if (string.IsNullOrWhiteSpace(email))
-                ModelState.AddModelError(nameof(email), "Email is required.");
-
-            if (string.IsNullOrWhiteSpace(password))
-                ModelState.AddModelError(nameof(password), "Password is required.");
-
-            if (!ModelState.IsValid)
-                return View();
-
-            var result = await _userService.LoginAdminAsync(email, password);
-
-            if (!result.Success)
+            try
             {
-                ModelState.AddModelError("", result.Message);
+                if (string.IsNullOrWhiteSpace(email))
+                    ModelState.AddModelError(nameof(email), "Email is required.");
+
+                if (string.IsNullOrWhiteSpace(password))
+                    ModelState.AddModelError(nameof(password), "Password is required.");
+
+                if (!ModelState.IsValid)
+                    return View();
+
+                var result = await _userService.LoginAdminAsync(email, password);
+
+                if (!result.Success)
+                {
+                    ModelState.AddModelError("", result.Message);
+                    return View();
+                }
+
+                // Save token in session
+                HttpContext.Session.SetString("Token", result.Data.Token);
+
+                return RedirectToAction("Service", "Admin");
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("", "An unexpected error occurred. Please try again.");
                 return View();
             }
-
-            // Save token in session
-            HttpContext.Session.SetString("Token", result.Data.Token);
-
-            return RedirectToAction("Service", "Admin");
         }
+
 
         /*--------------------------------------
                      L O G O U T

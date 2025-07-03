@@ -11,10 +11,12 @@ namespace Event_Management.Controllers
     {
 
         private readonly IEventService _eventService;
+        private readonly IUserService _userService;
 
-        public EventController(IEventService eventService)
+        public EventController(IEventService eventService, IUserService userService)
         {
             _eventService = eventService;
+            _userService = userService;
         }
 
         private bool IsTokenValid()
@@ -35,16 +37,19 @@ namespace Event_Management.Controllers
             if (userId == Guid.Empty)
                 return RedirectToAction("Create", "Account");
 
-            // Get user from Users table
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            // Get user from UserService
+            var response = await _userService.GetUserByIdAsync(userId);
 
-            // Check if user exists and is Organizer
-            if (user == null || user.Role != "Organizer")
+            if (response == null || !response.Success || response.Data == null)
+                return RedirectToAction("Create", "Account");
+
+            var user = response.Data;
+
+            if (user.Role != "Organizer")
                 return RedirectToAction("Create", "Account");
 
             return View();
         }
-
 
         //step - 2 : Venue information
         [HttpGet]

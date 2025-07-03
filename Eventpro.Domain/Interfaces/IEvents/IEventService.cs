@@ -16,14 +16,12 @@ namespace Eventpro.Domain.Interfaces.IEvents
             string? isPaid = null
         );
 
-        Task<IServiceResponse<Events>> GetEventByIdAsync(
-            Guid id,
-            string actingRole
-        );
+        Task<IServiceResponse<Events>> GetEventByIdAsync(Guid id);
 
         Task<IServiceResponse<IEnumerable<Events>>> GetEventsByUserIdAsync(
             Guid userId,
-            string actingRole
+            string eventName,
+            string status
         );
 
         Task<IServiceResponse<Events>> CreateEventAsync(
