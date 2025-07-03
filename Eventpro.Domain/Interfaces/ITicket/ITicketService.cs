@@ -14,7 +14,7 @@ namespace Eventpro.Domain.Interfaces.ITicket
             string buyerName = null
         );
 
-        Task<IServiceResponse<IEnumerable<Tickets>>> GetTicketsByUserIdAsync(Guid userId, string actingRole);
+        Task<IServiceResponse<IEnumerable<Tickets>>> GetTicketsByUserIdAsync(Guid userId, string? eventName = null, string? status = null);
 
         Task<IServiceResponse<int>> GetTicketCountByUserIdAsync(Guid userId, string actingRole);
 

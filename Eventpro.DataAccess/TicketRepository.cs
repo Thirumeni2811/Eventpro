@@ -86,5 +86,15 @@ namespace Eventpro.DataAccess
                 .Select(g => new ValueTuple<string, int>(g.Key, g.Sum(t => t.Quantity)))
                 .ToListAsync();
         }
+        public async Task<IEnumerable<Events>> GetDistinctEventsByUserIdAsync(Guid userId)
+        {
+            return await _context.Tickets
+                .Include(t => t.Event)
+                .Where(t => t.UserId == userId && t.Event != null)
+                .Select(t => t.Event)
+                .Distinct()
+                .ToListAsync();
+        }
+
     }
 }

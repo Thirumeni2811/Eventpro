@@ -60,18 +60,48 @@ namespace Eventpro.Service
         }
 
         // get tickets by user id
-        public async Task<IServiceResponse<IEnumerable<Tickets>>> GetTicketsByUserIdAsync(Guid userId, string actingRole)
+        public async Task<IServiceResponse<IEnumerable<Tickets>>> GetTicketsByUserIdAsync(
+            Guid userId,
+            string actingRole,
+            string? eventName = null,
+            string? status = null)
         {
             try
             {
                 if (actingRole != "User")
+                {
                     return _responseFactory.CreateResponse<IEnumerable<Tickets>>(
-                        false, "Unauthorized.", ActionType.Unauthorized);
+                        false,
+                        "Unauthorized.",
+                        ActionType.Unauthorized);
+                }
 
                 var tickets = await _repository.GetByUserIdAsync(userId);
 
+                if (!string.IsNullOrWhiteSpace(eventName))
+                {
+                    eventName = eventName.Trim();
+                    tickets = tickets.Where(t =>
+                        t.Event != null &&
+                        t.Event.Name.Contains(eventName, StringComparison.OrdinalIgnoreCase));
+                }
+
+                if (!string.IsNullOrWhiteSpace(status))
+                {
+                    status = status.Trim();
+                    tickets = tickets.Where(t =>
+                        t.Event != null &&
+                        t.Event.Status.Equals(status, StringComparison.OrdinalIgnoreCase));
+                }
+
+                // Order descending by purchase date
+                tickets = tickets.OrderByDescending(t => t.PurchaseDate);
+
                 return _responseFactory.CreateResponse(
-                    true, "Tickets retrieved.", ActionType.Retrieved, tickets);
+                    true,
+                    "Tickets retrieved.",
+                    ActionType.Retrieved,
+                    tickets);
             }
             catch (Exception ex)
             {

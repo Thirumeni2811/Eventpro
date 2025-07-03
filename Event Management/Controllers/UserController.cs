@@ -1,22 +1,27 @@
-﻿using Event_Management.Data;
-using Event_Management.Helpers;
+﻿using Event_Management.Helpers;
 using Event_Management.Models;
+using Eventpro.Domain.Interfaces.ITicket;
+using Eventpro.Domain.Models;
 using Microsoft.AspNetCore.Mvc;
-using System.Text.Json;
-using Microsoft.EntityFrameworkCore;
 
 namespace Event_Management.Controllers
 {
     public class UserController : Controller
     {
-        private readonly AppDbContext _context;
+        private readonly IUserService _userService;
+        private readonly ITicketService _ticketService;
+        private readonly ITicketRepository _ticketRepository;
 
-        public UserController(AppDbContext context)
+        public UserController(
+            IUserService userService,
+            ITicketService ticketService,
+            ITicketRepository ticketRepository)
         {
-            _context = context;
+            _userService = userService;
+            _ticketService = ticketService;
+            _ticketRepository = ticketRepository;
         }
 
-        // Get the events by User Id (token)
         [HttpGet]
         [Route("my-tickets")]
         public async Task<IActionResult> UserEvent(string eventName, string status)
@@ -32,48 +37,42 @@ namespace Event_Management.Controllers
                 return RedirectToAction("Signup", "Account");
             }
 
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
-            if (user == null)
+            // Get the user via service
+            var userResponse = await _userService.GetUserByIdAsync(userId);
+            if (!userResponse.Success || userResponse.Data == null)
             {
                 return RedirectToAction("Signup", "Account");
             }
 
-            var ticketsQuery = _context.Tickets
-                .Include(t => t.Event)
-                    .ThenInclude(e => e.User)
-                .Include(t => t.User)
-                .Where(t => t.UserId == userId);
+            var user = userResponse.Data;
 
-            if (!string.IsNullOrWhiteSpace(eventName))
+            // Get the tickets via service
+            var ticketsResponse = await _ticketService.GetTicketsByUserIdAsync(userId, eventName, status);
+            if (!ticketsResponse.Success)
             {
-                eventName = eventName.Trim();
-                ticketsQuery = ticketsQuery.Where(t => t.Event.Name.Contains(eventName));
+                return BadRequest(ticketsResponse.Message);
             }
 
-            if (!string.IsNullOrWhiteSpace(status))
+            var tickets = ticketsResponse.Data ?? Enumerable.Empty<Tickets>();
+
+            // Get distinct events via service
+            var eventsResponse = await _ticketService.GetDistinctEventsByUserIdAsync(userId);
+            if (!eventsResponse.Success)
             {
-                status = status.Trim();
-                ticketsQuery = ticketsQuery.Where(t => t.Event.Status.Equals(status, StringComparison.OrdinalIgnoreCase));
+                return BadRequest(eventsResponse.Message);
             }
 
-            var tickets = await ticketsQuery
-                .OrderByDescending(t => t.PurchaseDate)
-                .ToListAsync();
+            var events = eventsResponse.Data ?? Enumerable.Empty<Events>();
 
-            Console.WriteLine($"Tickets fetched: {tickets.Count}");
+            // Pass everything to ViewBag
+            ViewBag.User = user;
+            ViewBag.Tickets = tickets.ToList();
+            ViewBag.Events = events.ToList();
+            ViewBag.SearchQuery = eventName;
+            ViewBag.StatusFilter = status;
+            ViewBag.Role = user.Role;
 
-            var viewModel = new EventsView
-            {
-                User = user,
-                Tickets = tickets,
-                Events = tickets.Select(t => t.Event).Distinct().ToList(),
-                SearchQuery = eventName,
-                StatusFilter = status,
-                Role = user.Role
-            };
-
-            return View(viewModel);
+            return View();
         }
-
     }
 }
