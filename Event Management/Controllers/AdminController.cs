@@ -752,6 +752,7 @@ namespace Event_Management.Controllers
                 var allUsersResponse = await _userService.GetAllUsersAsync(user.Role);
                 var allEventsResponse = await _eventService.GetAllEventsAsync(user.Role);
 
+
                 ViewBag.Organizers = allUsersResponse.Data?
                     .Where(u => u.Role == "Organizer")
                     .OrderBy(u => u.Name)

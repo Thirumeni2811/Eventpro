@@ -1,4 +1,5 @@
-﻿using Eventpro.Domain.Interfaces.IServ;
+﻿using Eventpro.Domain.Exceptions;
+using Eventpro.Domain.Interfaces.IServ;
 using Eventpro.Domain.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -15,34 +16,76 @@ namespace Eventpro.DataAccess
 
         public async Task<IEnumerable<Services>> GetAllAsync()
         {
-            return await _context.Services.ToListAsync();
+            try
+            {
+                return await _context.Services.ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new DatabaseException("Error retrieving all services.", ex);
+            }
         }
 
         public async Task<Services?> GetByIdAsync(Guid id)
         {
-            return await _context.Services.FindAsync(id);
+            try
+            {
+                return await _context.Services.FindAsync(id);
+            }
+            catch (Exception ex)
+            {
+                throw new DatabaseException($"Error retrieving service with ID {id}.", ex);
+            }
         }
 
         public async Task AddAsync(Services serv)
         {
-            await _context.Services.AddAsync(serv);
+            try
+            {
+                await _context.Services.AddAsync(serv);
+            }
+            catch (Exception ex)
+            {
+                throw new DatabaseException("Error adding new service.", ex);
+            }
         }
 
         public Task UpdateAsync(Services serv)
         {
-            _context.Services.Update(serv);
-            return Task.CompletedTask;
+            try
+            {
+                _context.Services.Update(serv);
+                return Task.CompletedTask;
+            }
+            catch (Exception ex)
+            {
+                throw new DatabaseException($"Error updating service with ID {serv?.Id}.", ex);
+            }
         }
 
         public Task DeleteAsync(Services serv)
         {
-            _context.Services.Remove(serv);
-            return Task.CompletedTask;
+            try
+            {
+                _context.Services.Remove(serv);
+                return Task.CompletedTask;
+            }
+            catch (Exception ex)
+            {
+                throw new DatabaseException($"Error deleting service with ID {serv?.Id}.", ex);
+            }
         }
 
         public async Task SaveChangesAsync()
         {
-            await _context.SaveChangesAsync();
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new DatabaseException("Error saving changes to the database.", ex);
+            }
         }
     }
 }

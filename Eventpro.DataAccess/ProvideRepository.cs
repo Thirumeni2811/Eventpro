@@ -1,4 +1,5 @@
-﻿using Eventpro.Domain.Interfaces.IProvide;
+﻿using Eventpro.Domain.Exceptions;
+using Eventpro.Domain.Interfaces.IProvide;
 using Eventpro.Domain.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -15,34 +16,76 @@ namespace Eventpro.DataAccess
 
         public async Task<IEnumerable<Provides>> GetAllAsync()
         {
-            return await _context.Provides.ToListAsync();
+            try
+            {
+                return await _context.Provides.ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new DatabaseException("Error retrieving all provides.", ex);
+            }
         }
 
         public async Task<Provides?> GetByIdAsync(Guid id)
         {
-            return await _context.Provides.FindAsync(id);
+            try
+            {
+                return await _context.Provides.FindAsync(id);
+            }
+            catch (Exception ex)
+            {
+                throw new DatabaseException($"Error retrieving provide with ID {id}.", ex);
+            }
         }
 
         public async Task AddAsync(Provides prov)
         {
-            await _context.Provides.AddAsync(prov);
+            try
+            {
+                await _context.Provides.AddAsync(prov);
+            }
+            catch (Exception ex)
+            {
+                throw new DatabaseException("Error adding new provide.", ex);
+            }
         }
 
         public Task UpdateAsync(Provides prov)
         {
-            _context.Provides.Update(prov);
-            return Task.CompletedTask;
+            try
+            {
+                _context.Provides.Update(prov);
+                return Task.CompletedTask;
+            }
+            catch (Exception ex)
+            {
+                throw new DatabaseException($"Error updating provide with ID {prov?.Id}.", ex);
+            }
         }
 
         public Task DeleteAsync(Provides prov)
         {
-            _context.Provides.Remove(prov);
-            return Task.CompletedTask;
+            try
+            {
+                _context.Provides.Remove(prov);
+                return Task.CompletedTask;
+            }
+            catch (Exception ex)
+            {
+                throw new DatabaseException($"Error deleting provide with ID {prov?.Id}.", ex);
+            }
         }
 
         public async Task SaveChangesAsync()
         {
-            await _context.SaveChangesAsync();
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new DatabaseException("Error saving changes to the database.", ex);
+            }
         }
     }
 }

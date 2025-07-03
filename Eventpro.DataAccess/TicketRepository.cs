@@ -1,4 +1,5 @@
-﻿using Eventpro.Domain.Interfaces.ITicket;
+﻿using Eventpro.Domain.Exceptions;
+using Eventpro.Domain.Interfaces.ITicket;
 using Eventpro.Domain.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -15,10 +16,17 @@ namespace Eventpro.DataAccess
 
         public async Task<IEnumerable<Tickets>> GetAllAsync()
         {
-            return await _context.Tickets
-                .Include(t => t.Event)
-                .Include(t => t.User)
-                .ToListAsync();
+            try
+            {
+                return await _context.Tickets
+                    .Include(t => t.Event)
+                    .Include(t => t.User)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new DatabaseException("Error retrieving all tickets.", ex);
+            }
         }
 
         public async Task<IEnumerable<Tickets>> GetFilteredAsync(
@@ -28,90 +36,159 @@ namespace Eventpro.DataAccess
             string? organizerName,
             string? buyerName)
         {
-            var query = _context.Tickets
-                .Include(t => t.Event)
-                    .ThenInclude(e => e.User)
-                .Include(t => t.User)
-                .AsQueryable();
+            try
+            {
+                var query = _context.Tickets
+                    .Include(t => t.Event)
+                        .ThenInclude(e => e.User)
+                    .Include(t => t.User)
+                    .AsQueryable();
 
-            if (ticketId.HasValue)
-                query = query.Where(t => t.Id == ticketId.Value);
+                if (ticketId.HasValue)
+                    query = query.Where(t => t.Id == ticketId.Value);
 
-            if (eventId.HasValue)
-                query = query.Where(t => t.EventId == eventId.Value);
+                if (eventId.HasValue)
+                    query = query.Where(t => t.EventId == eventId.Value);
 
-            if (!string.IsNullOrWhiteSpace(eventName))
-                query = query.Where(t => t.Event != null && t.Event.Name.Contains(eventName.Trim(), StringComparison.OrdinalIgnoreCase));
+                if (!string.IsNullOrWhiteSpace(eventName))
+                    query = query.Where(t =>
+                        t.Event != null &&
+                        t.Event.Name.Contains(eventName.Trim(), StringComparison.OrdinalIgnoreCase));
 
-            if (!string.IsNullOrWhiteSpace(organizerName))
-                query = query.Where(t => t.Event != null && t.Event.User != null && t.Event.User.Name.Contains(organizerName.Trim(), StringComparison.OrdinalIgnoreCase));
+                if (!string.IsNullOrWhiteSpace(organizerName))
+                    query = query.Where(t =>
+                        t.Event != null &&
+                        t.Event.User != null &&
+                        t.Event.User.Name.Contains(organizerName.Trim(), StringComparison.OrdinalIgnoreCase));
 
-            if (!string.IsNullOrWhiteSpace(buyerName))
-                query = query.Where(t => t.User != null && t.User.Name.Contains(buyerName.Trim(), StringComparison.OrdinalIgnoreCase));
+                if (!string.IsNullOrWhiteSpace(buyerName))
+                    query = query.Where(t =>
+                        t.User != null &&
+                        t.User.Name.Contains(buyerName.Trim(), StringComparison.OrdinalIgnoreCase));
 
-            return await query
-                .OrderByDescending(t => t.PurchaseDate)
-                .ToListAsync();
+                return await query
+                    .OrderByDescending(t => t.PurchaseDate)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new DatabaseException("Error filtering tickets.", ex);
+            }
         }
-
 
         public async Task<IEnumerable<Tickets>> GetByUserIdAsync(Guid userId)
         {
-            return await _context.Tickets
-                .Include(t => t.Event)
-                .Where(t => t.UserId == userId)
-                .ToListAsync();
+            try
+            {
+                return await _context.Tickets
+                    .Include(t => t.Event)
+                    .Where(t => t.UserId == userId)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new DatabaseException($"Error retrieving tickets for user {userId}.", ex);
+            }
         }
 
         public async Task<int> GetBookedQuantityByEventIdAsync(Guid eventId)
         {
-            return await _context.Tickets
-                .Where(t => t.EventId == eventId)
-                .SumAsync(t => (int?)t.Quantity) ?? 0;
+            try
+            {
+                return await _context.Tickets
+                    .Where(t => t.EventId == eventId)
+                    .SumAsync(t => (int?)t.Quantity) ?? 0;
+            }
+            catch (Exception ex)
+            {
+                throw new DatabaseException($"Error retrieving booked quantity for event {eventId}.", ex);
+            }
         }
 
         public async Task<int> GetCountByUserIdAsync(Guid userId)
         {
-            return await _context.Tickets
-                .Where(t => t.UserId == userId)
-                .SumAsync(t => t.Quantity);
+            try
+            {
+                return await _context.Tickets
+                    .Where(t => t.UserId == userId)
+                    .SumAsync(t => t.Quantity);
+            }
+            catch (Exception ex)
+            {
+                throw new DatabaseException($"Error retrieving ticket count for user {userId}.", ex);
+            }
         }
 
         public async Task<IEnumerable<Tickets>> GetByEventIdAsync(Guid eventId)
         {
-            return await _context.Tickets
-                .Include(t => t.User)
-                .Where(t => t.EventId == eventId)
-                .ToListAsync();
+            try
+            {
+                return await _context.Tickets
+                    .Include(t => t.User)
+                    .Where(t => t.EventId == eventId)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new DatabaseException($"Error retrieving tickets for event {eventId}.", ex);
+            }
         }
 
         public async Task<IEnumerable<(string Type, int Quantity)>> GetTicketTypeCountsByEventIdAsync(Guid eventId)
         {
-            return await _context.Tickets
-                .Where(t => t.EventId == eventId)
-                .GroupBy(t => t.Type)
-                .Select(g => new ValueTuple<string, int>(g.Key, g.Sum(t => t.Quantity)))
-                .ToListAsync();
+            try
+            {
+                return await _context.Tickets
+                    .Where(t => t.EventId == eventId)
+                    .GroupBy(t => t.Type)
+                    .Select(g => new ValueTuple<string, int>(g.Key, g.Sum(t => t.Quantity)))
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new DatabaseException($"Error retrieving ticket type counts for event {eventId}.", ex);
+            }
         }
+
         public async Task<IEnumerable<Events>> GetDistinctEventsByUserIdAsync(Guid userId)
         {
-            return await _context.Tickets
-                .Include(t => t.Event)
-                .Where(t => t.UserId == userId && t.Event != null)
-                .Select(t => t.Event)
-                .Distinct()
-                .ToListAsync();
+            try
+            {
+                return await _context.Tickets
+                    .Include(t => t.Event)
+                    .Where(t => t.UserId == userId && t.Event != null)
+                    .Select(t => t.Event)
+                    .Distinct()
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new DatabaseException($"Error retrieving distinct events for user {userId}.", ex);
+            }
         }
 
         public async Task AddRangeAsync(IEnumerable<Tickets> tickets)
         {
-            await _context.Tickets.AddRangeAsync(tickets);
+            try
+            {
+                await _context.Tickets.AddRangeAsync(tickets);
+            }
+            catch (Exception ex)
+            {
+                throw new DatabaseException("Error adding ticket range.", ex);
+            }
         }
 
         public async Task SaveChangesAsync()
         {
-            await _context.SaveChangesAsync();
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new DatabaseException("Error saving ticket changes.", ex);
+            }
         }
-
     }
 }

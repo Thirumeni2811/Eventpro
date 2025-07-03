@@ -1,5 +1,4 @@
-﻿using Eventpro.DataAccess;
-using Eventpro.Domain.Exceptions;
+﻿using Eventpro.Domain.Exceptions;
 using Eventpro.Domain.Interfaces.IUser;
 using Eventpro.Domain.Models;
 using Microsoft.EntityFrameworkCore;
@@ -41,7 +40,14 @@ namespace Eventpro.DataAccess
 
         public async Task<Users?> GetByEmailAsync(string email)
         {
-            return await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+            try
+            {
+                return await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+            }
+            catch (Exception ex)
+            {
+                throw new DatabaseException($"Error retrieving user by email '{email}'.", ex);
+            }
         }
 
         public async Task<IEnumerable<Users>> GetAllAsync()
@@ -57,45 +63,52 @@ namespace Eventpro.DataAccess
         }
 
         public async Task<IEnumerable<Users>> GetFilteredAsync(
-            string? userId = null,
-            string? name = null,
-            string? email = null,
-            string? phoneNo = null,
-            string? role = null)
+    string? userId = null,
+    string? name = null,
+    string? email = null,
+    string? phoneNo = null,
+    string? role = null)
         {
-            var query = _context.Users.AsQueryable();
-
-            if (!string.IsNullOrWhiteSpace(userId))
+            try
             {
-                userId = userId.Trim();
-                query = query.Where(u => u.Id.ToString().Contains(userId));
-            }
+                var query = _context.Users.AsQueryable();
 
-            if (!string.IsNullOrWhiteSpace(name))
+                if (!string.IsNullOrWhiteSpace(userId))
+                {
+                    userId = userId.Trim();
+                    query = query.Where(u => u.Id.ToString().Contains(userId));
+                }
+
+                if (!string.IsNullOrWhiteSpace(name))
+                {
+                    name = name.Trim();
+                    query = query.Where(u => u.Name.Contains(name));
+                }
+
+                if (!string.IsNullOrWhiteSpace(email))
+                {
+                    email = email.Trim();
+                    query = query.Where(u => u.Email.Contains(email));
+                }
+
+                if (!string.IsNullOrWhiteSpace(phoneNo))
+                {
+                    phoneNo = phoneNo.Trim();
+                    query = query.Where(u => u.PhoneNo.Contains(phoneNo));
+                }
+
+                if (!string.IsNullOrWhiteSpace(role))
+                {
+                    role = role.Trim();
+                    query = query.Where(u => u.Role == role);
+                }
+
+                return await query.ToListAsync();
+            }
+            catch (Exception ex)
             {
-                name = name.Trim();
-                query = query.Where(u => u.Name.Contains(name));
+                throw new DatabaseException("Error retrieving filtered users.", ex);
             }
-
-            if (!string.IsNullOrWhiteSpace(email))
-            {
-                email = email.Trim();
-                query = query.Where(u => u.Email.Contains(email));
-            }
-
-            if (!string.IsNullOrWhiteSpace(phoneNo))
-            {
-                phoneNo = phoneNo.Trim();
-                query = query.Where(u => u.PhoneNo.Contains(phoneNo));
-            }
-
-            if (!string.IsNullOrWhiteSpace(role))
-            {
-                role = role.Trim();
-                query = query.Where(u => u.Role == role);
-            }
-
-            return await query.ToListAsync();
         }
 
         public async Task<bool> ExistsByEmailAsync(string email)
