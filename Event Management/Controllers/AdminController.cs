@@ -7,10 +7,7 @@ using Eventpro.Domain.Interfaces.ITicket;
 using Eventpro.Domain.Interfaces.IUser;
 using Eventpro.Domain.Models;
 using Eventpro.Domain.ResponseFormat;
-using Eventpro.Service;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using System.Data.Entity;
 
 namespace Event_Management.Controllers
 {
@@ -835,7 +832,6 @@ namespace Event_Management.Controllers
                 return View();
             }
         }
-
 
         /*--------------------------------------
                      L O G O U T

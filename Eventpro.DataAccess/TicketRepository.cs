@@ -63,6 +63,13 @@ namespace Eventpro.DataAccess
                 .ToListAsync();
         }
 
+        public async Task<int> GetBookedQuantityByEventIdAsync(Guid eventId)
+        {
+            return await _context.Tickets
+                .Where(t => t.EventId == eventId)
+                .SumAsync(t => (int?)t.Quantity) ?? 0;
+        }
+
         public async Task<int> GetCountByUserIdAsync(Guid userId)
         {
             return await _context.Tickets
@@ -94,6 +101,16 @@ namespace Eventpro.DataAccess
                 .Select(t => t.Event)
                 .Distinct()
                 .ToListAsync();
+        }
+
+        public async Task AddRangeAsync(IEnumerable<Tickets> tickets)
+        {
+            await _context.Tickets.AddRangeAsync(tickets);
+        }
+
+        public async Task SaveChangesAsync()
+        {
+            await _context.SaveChangesAsync();
         }
 
     }

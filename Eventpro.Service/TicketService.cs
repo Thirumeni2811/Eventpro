@@ -62,20 +62,11 @@ namespace Eventpro.Service
         // get tickets by user id
         public async Task<IServiceResponse<IEnumerable<Tickets>>> GetTicketsByUserIdAsync(
             Guid userId,
-            string actingRole,
             string? eventName = null,
             string? status = null)
         {
             try
             {
-                if (actingRole != "User")
-                {
-                    return _responseFactory.CreateResponse<IEnumerable<Tickets>>(
-                        false,
-                        "Unauthorized.",
-                        ActionType.Unauthorized);
-                }
-
                 var tickets = await _repository.GetByUserIdAsync(userId);
 
                 if (!string.IsNullOrWhiteSpace(eventName))
@@ -149,6 +140,21 @@ namespace Eventpro.Service
             }
         }
 
+        // get booked quantity
+        public async Task<IServiceResponse<int>> GetBookedQuantityAsync(Guid eventId)
+        {
+            try
+            {
+                var count = await _repository.GetBookedQuantityByEventIdAsync(eventId);
+                return _responseFactory.CreateResponse(
+                    true, "Booked quantity retrieved.", ActionType.Retrieved, count);
+            }
+            catch (Exception ex)
+            {
+                throw new ServiceException("Error retrieving booked quantity.", ex);
+            }
+        }
+
         // get ticket type count by event id
         public async Task<IServiceResponse<IEnumerable<(string Type, int Quantity)>>> GetTicketTypeCountsByEventIdAsync(Guid eventId)
         {
@@ -164,5 +170,56 @@ namespace Eventpro.Service
                 throw new ServiceException("Error retrieving ticket type counts.", ex);
             }
         }
+
+        // Get Distinct Events By UserId
+        public async Task<IServiceResponse<IEnumerable<Events>>> GetDistinctEventsByUserIdAsync(Guid userId)
+        {
+            try
+            {
+                var events = await _repository.GetDistinctEventsByUserIdAsync(userId);
+
+                return _responseFactory.CreateResponse(
+                    true,
+                    "Events retrieved successfully.",
+                    ActionType.Retrieved,
+                    events
+                );
+            }
+            catch (Exception ex)
+            {
+                throw new ServiceException("Error retrieving events by user.", ex);
+            }
+        }
+
+        // Add Ticket
+        public async Task<IServiceResponse> AddTicketsAsync(IEnumerable<Tickets> tickets)
+        {
+            try
+            {
+                if (tickets == null || !tickets.Any())
+                {
+                    return _responseFactory.CreateResponse(
+                        false,
+                        "No tickets to add.",
+                        ActionType.NotFound
+                    );
+                }
+
+                await _repository.AddRangeAsync(tickets);
+                await _repository.SaveChangesAsync();
+
+                return _responseFactory.CreateResponse(
+                    true,
+                    "Tickets added successfully.",
+                    ActionType.Created
+                );
+            }
+            catch (Exception ex)
+            {
+                throw new ServiceException("Error adding tickets.", ex);
+            }
+        }
+
+
     }
 }

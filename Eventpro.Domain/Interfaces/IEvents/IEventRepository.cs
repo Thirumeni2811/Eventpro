@@ -13,6 +13,12 @@ namespace Eventpro.Domain.Interfaces.IEvents
             string? venue = null,
             string? status = null,
             string? isPaid = null);
+        Task<IEnumerable<Events>> GetFilteredPublicEventsAsync(
+            string name,
+            string status,
+            string type,
+            string venue
+        );
         Task<Events?> GetByIdAsync(Guid id);
         Task<IEnumerable<Events>> GetByUserIdAsync(Guid userId);
         Task AddAsync(Events evt);

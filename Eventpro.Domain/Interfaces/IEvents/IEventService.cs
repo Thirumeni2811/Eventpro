@@ -16,6 +16,13 @@ namespace Eventpro.Domain.Interfaces.IEvents
             string? isPaid = null
         );
 
+        Task<IServiceResponse<IEnumerable<Events>>> GetPublicEventsAsync(
+            string name,
+            string status,
+            string type,
+            string venue
+        );
+
         Task<IServiceResponse<Events>> GetEventByIdAsync(Guid id);
 
         Task<IServiceResponse<IEnumerable<Events>>> GetEventsByUserIdAsync(

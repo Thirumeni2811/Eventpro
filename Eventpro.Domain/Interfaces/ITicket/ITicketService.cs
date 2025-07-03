@@ -19,7 +19,11 @@ namespace Eventpro.Domain.Interfaces.ITicket
         Task<IServiceResponse<int>> GetTicketCountByUserIdAsync(Guid userId, string actingRole);
 
         Task<IServiceResponse<IEnumerable<Tickets>>> GetTicketsByEventIdAsync(Guid eventId, string actingRole);
+        Task<IServiceResponse<int>> GetBookedQuantityAsync(Guid eventId);
 
         Task<IServiceResponse<IEnumerable<(string Type, int Quantity)>>> GetTicketTypeCountsByEventIdAsync(Guid eventId);
+        Task<IServiceResponse<IEnumerable<Events>>> GetDistinctEventsByUserIdAsync(Guid userId);
+        Task<IServiceResponse> AddTicketsAsync(IEnumerable<Tickets> tickets);
+
     }
 }

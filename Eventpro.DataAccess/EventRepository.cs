@@ -70,6 +70,38 @@ namespace Eventpro.DataAccess
             }
         }
 
+        public async Task<IEnumerable<Events>> GetFilteredPublicEventsAsync(
+            string name,
+            string status,
+            string type,
+            string venue)
+        {
+            var currentDateTime = DateTime.UtcNow;
+
+            var query = _context.Events
+                .Where(e =>
+                    e.Type != "Organizer" &&
+                    e.Status != "Completed" &&
+                    e.Status != "Cancelled" &&
+                    e.DateTime > currentDateTime &&
+                    (e.RegistrationDeadline == null || e.RegistrationDeadline > currentDateTime)
+                );
+
+            if (!string.IsNullOrWhiteSpace(name))
+                query = query.Where(e => e.Name.Contains(name.Trim()));
+
+            if (!string.IsNullOrWhiteSpace(status))
+                query = query.Where(e => e.Status == status);
+
+            if (!string.IsNullOrWhiteSpace(type))
+                query = query.Where(e => e.Type == type);
+
+            if (!string.IsNullOrWhiteSpace(venue))
+                query = query.Where(e => e.Venue == venue);
+
+            return await query.OrderBy(e => e.DateTime).ToListAsync();
+        }
+
         public async Task<Events?> GetByIdAsync(Guid id)
         {
             try

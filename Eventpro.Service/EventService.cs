@@ -1,5 +1,6 @@
 ﻿using Eventpro.Domain.Exceptions;
 using Eventpro.Domain.Interfaces.IEvents;
+using Eventpro.Domain.Interfaces.ITicket;
 using Eventpro.Domain.Models;
 using Eventpro.Domain.ResponseFormat;
 
@@ -47,6 +48,45 @@ namespace Eventpro.Service
             catch (Exception ex)
             {
                 throw new ServiceException("Error retrieving events.", ex);
+            }
+        }
+
+        // GET PUBLIC EVENTS
+        public async Task<IServiceResponse<IEnumerable<Events>>> GetPublicEventsAsync(
+            string name = null,
+            string status = null,
+            string type = null,
+            string venue = null)
+        {
+            try
+            {
+                var events = await _repository.GetFilteredPublicEventsAsync(
+                    name, status, type, venue);
+
+                bool isUpdated = false;
+                foreach (var ev in events)
+                {
+                    if (ev.Status == "Upcoming" && ev.DateTime < DateTime.UtcNow)
+                    {
+                        ev.Status = "Completed";
+                        isUpdated = true;
+                    }
+                }
+
+                if (isUpdated)
+                {
+                    await _repository.SaveChangesAsync();
+                }
+
+                return _responseFactory.CreateResponse(
+                    true,
+                    "Public events retrieved.",
+                    ActionType.Retrieved,
+                    events);
+            }
+            catch (Exception ex)
+            {
+                throw new ServiceException("Error retrieving public events.", ex);
             }
         }
 
@@ -133,6 +173,7 @@ namespace Eventpro.Service
                 throw new ServiceException("Error retrieving events with filter.", ex);
             }
         }
+
 
         // CREATE EVENT
         public async Task<IServiceResponse<Events>> CreateEventAsync(
