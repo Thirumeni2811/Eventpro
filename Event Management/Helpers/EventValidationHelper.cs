@@ -1,4 +1,4 @@
-﻿using Event_Management.Models;
+﻿using Eventpro.Domain.Models;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace Event_Management.Helpers
@@ -104,9 +104,9 @@ namespace Event_Management.Helpers
         }
 
         // Step 5: Promotions
-        public static void ValidatePromotions(Events model, ModelStateDictionary modelState)
+        public static void ValidatePromotions(Events model, IFormFile bannerFile, ModelStateDictionary modelState)
         {
-            if (string.IsNullOrEmpty(model.Banner) && (model.BannerFile == null || model.BannerFile.Length == 0))
+            if (string.IsNullOrEmpty(model.Banner) && (bannerFile == null || bannerFile.Length == 0))
             {
                 modelState.AddModelError("BannerFile", "Banner is required.");
             }

@@ -19,10 +19,10 @@ namespace Event_Management.Controllers
         private readonly IProvideService _provideService;
         private readonly IGalleryService _galleryService;
         private readonly IUserService _userService;
-        private readonly ITicketRepository _ticketService;
+        private readonly ITicketService _ticketService;
         private readonly IUserRepository _userRepository;
 
-        public AdminController(IServService servService, IProvideService provideService, IGalleryService galleryService, IUserService userService, ITicketRepository ticketService, IUserRepository userRepository)
+        public AdminController(IServService servService, IProvideService provideService, IGalleryService galleryService, IUserService userService, ITicketService ticketService, IUserRepository userRepository)
         {
             _servService = servService;
             _provideService = provideService;
@@ -587,6 +587,9 @@ namespace Event_Management.Controllers
             }
         }
 
+        /*--------------------------------------
+                      E V E N T S
+        --------------------------------------*/
 
         // GET: Events
         [HttpGet("/admin/events")]
@@ -729,8 +732,8 @@ namespace Event_Management.Controllers
 
         [HttpGet("admin/tickets")]
         public async Task<IActionResult> Ticket(
-            string ticketId,
-            string eventId,
+            Guid? ticketId,
+            Guid? eventId,
             string eventName,
             string organizerName,
             string buyerName)
@@ -741,7 +744,7 @@ namespace Event_Management.Controllers
                 return RedirectToAction("Index", "Home");
             }
 
-            var ticketsResponse = await _ticketService.GetAllAsync(
+            var ticketsResponse = await _ticketService.GetAllTicketsAsync(
                 user.Role,
                 ticketId,
                 eventId,
@@ -756,7 +759,6 @@ namespace Event_Management.Controllers
                 return RedirectToAction("Index", "Home");
             }
 
-            // Fetch dropdown data
             var allUsersResponse = await _userService.GetAllUsersAsync(user.Role);
             var allEventsResponse = await _eventService.GetAllAsync();
 
@@ -777,14 +779,15 @@ namespace Event_Management.Controllers
             ViewBag.TicketList = ticketsResponse.Data;
 
             // Preserve filters for view
-            ViewData["TicketId"] = ticketId;
-            ViewData["EventId"] = eventId;
+            ViewData["TicketId"] = ticketId?.ToString();
+            ViewData["EventId"] = eventId?.ToString();
             ViewData["EventName"] = eventName;
             ViewData["OrganizerName"] = organizerName;
             ViewData["BuyerName"] = buyerName;
 
             return View();
         }
+
 
         /*--------------------------------------
                        A D M I N

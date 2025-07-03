@@ -6,7 +6,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Event_Management.Models
 {
-    public class Events
+    public class Eventsss
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]

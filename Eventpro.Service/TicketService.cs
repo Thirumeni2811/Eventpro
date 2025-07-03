@@ -19,7 +19,7 @@ namespace Eventpro.Service
         }
 
         // get all
-        public async Task<IServiceResponse<IEnumerable<Tickets>>> GetAllAsync(
+        public async Task<IServiceResponse<IEnumerable<Tickets>>> GetAllTicketsAsync(
             string actingRole,
             Guid? ticketId = null,
             Guid? eventId = null,

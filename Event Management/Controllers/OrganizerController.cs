@@ -178,7 +178,7 @@ namespace Event_Management.Controllers
         // Update the event by event id
         [HttpPost]
         [Route("update-event/{id}")]
-        public async Task<IActionResult> Update(Guid id, Events model)
+        public async Task<IActionResult> Update(Guid id, Eventsss model)
         {
             Guid userId;
             try

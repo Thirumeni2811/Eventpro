@@ -9,7 +9,7 @@ namespace Event_Management.Data
         public DbSet<Users> Users { get; set; }
         public DbSet<Service> Services { get; set; }
         public DbSet<Provide> Provides { get; set; }
-        public DbSet<Events> Events { get; set; }
+        public DbSet<Eventsss> Events { get; set; }
 
         public DbSet<Tickets> Tickets { get; set; }
         public DbSet<Gallery> Gallery { get; set; }

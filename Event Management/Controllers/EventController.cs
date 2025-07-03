@@ -1,20 +1,20 @@
-﻿using Event_Management.Data;
-using Event_Management.Helpers;
-using Event_Management.Models;
+﻿using Event_Management.Helpers;
+using Eventpro.Domain.Interfaces.IEvents;
+using Eventpro.Domain.Models;
 using Microsoft.AspNetCore.Mvc;
-using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace Event_Management.Controllers
 {
     public class EventController : Controller
     {
 
-        private readonly AppDbContext _context;
+        private readonly IEventService _eventService;
 
-        public EventController(AppDbContext context)
+        public EventController(IEventService eventService)
         {
-            _context = context;
+            _eventService = eventService;
         }
 
         private bool IsTokenValid()
@@ -434,9 +434,12 @@ namespace Event_Management.Controllers
         //step - 5 : promotion and communication
         [HttpPost]
         [Route("/promotion")]
-        public async Task<IActionResult> Promotion([FromForm] Events model)
+        public async Task<IActionResult> Promotion(
+            [FromForm] Events model,
+            IFormFile BannerFile
+        )
         {
-            EventValidationHelper.ValidatePromotions(model, ModelState);
+            EventValidationHelper.ValidatePromotions(model, BannerFile, ModelState);
 
             if (!ModelState.IsValid)
             {
@@ -445,13 +448,13 @@ namespace Event_Management.Controllers
 
             try
             {
-                if (model.BannerFile == null || model.BannerFile.Length == 0)
+                if (BannerFile == null || BannerFile.Length == 0)
                 {
                     ModelState.AddModelError("BannerFile", "Banner file is required.");
                     return View(model);
                 }
 
-                model.Banner = await FileUploadHelper.SaveFileAsync(model.BannerFile, "banners");
+                model.Banner = await FileUploadHelper.SaveFileAsync(BannerFile, "banners");
 
                 var eventJson = HttpContext.Session.GetString("EventData");
 
@@ -655,77 +658,84 @@ namespace Event_Management.Controllers
         //step - 10 : Event Info
         [HttpPost]
         [Route("/event-info")]
-        public async Task<IActionResult> Main(Events model)
+        public async Task<IActionResult> Main(Events model, IFormFile BannerFile)
         {
-            var userId = TokenHelper.GetIdFromToken(Request);
-            if (userId == Guid.Empty)
-                return RedirectToAction("Create", "Account");
-
-            var eventJson = HttpContext.Session.GetString("EventData");
-            var sessionEvent = !string.IsNullOrEmpty(eventJson) ? JsonSerializer.Deserialize<Events>(eventJson) : null;
-
-            if (sessionEvent != null)
+            Guid userId;
+            try
             {
-                model.Banner = sessionEvent.Banner; 
+                userId = TokenHelper.GetIdFromToken(Request);
+                if (userId == Guid.Empty)
+                    throw new Exception();
             }
+            catch
+            {
+                return RedirectToAction("Create", "Account");
+            }
+
+            var json = HttpContext.Session.GetString("EventData");
+            var draft = !string.IsNullOrEmpty(json)
+                ? JsonSerializer.Deserialize<Events>(json)
+                : null;
+            if (draft != null)
+                model.Banner = draft.Banner;
 
             model.UserId = userId;
             model.Status = "Upcoming";
-            model.CreatedAt = DateTime.Now;
+            model.CreatedAt = DateTime.UtcNow;
 
-            // Validation
             EventValidationHelper.ValidateBasics(model, ModelState);
             EventValidationHelper.ValidateVenue(model, ModelState);
             EventValidationHelper.ValidateTickets(model, ModelState);
             EventValidationHelper.ValidateProgram(model, ModelState);
             EventValidationHelper.ValidateCatering(model, ModelState);
 
-            // File upload
-            if (model.BannerFile != null && model.BannerFile.Length > 0)
+            if (BannerFile != null && BannerFile.Length > 0)
             {
                 try
                 {
-                    var bannerPath = await FileUploadHelper.SaveFileAsync(model.BannerFile, "banners");
-                    model.Banner = bannerPath;
+                    model.Banner = await FileUploadHelper.SaveFileAsync(BannerFile, "banners");
                 }
                 catch
                 {
                     ModelState.AddModelError("BannerFile", "Invalid banner file.");
                 }
             }
-            else if (sessionEvent != null && !string.IsNullOrEmpty(sessionEvent.Banner))
+            else if (draft != null && !string.IsNullOrEmpty(draft.Banner))
             {
-                model.Banner = sessionEvent.Banner;
+                model.Banner = draft.Banner;
             }
 
-
-            EventValidationHelper.ValidatePromotions(model, ModelState);
+            EventValidationHelper.ValidatePromotions(model, BannerFile, ModelState);
 
             if (!ModelState.IsValid)
             {
-                // Log each error to the console
                 foreach (var kvp in ModelState)
-                {
-                    var key = kvp.Key;
-                    foreach (var error in kvp.Value.Errors)
-                    {
-                        Console.WriteLine($"Validation error on '{key}': {error.ErrorMessage}");
-                    }
-                }
+                    foreach (var err in kvp.Value.Errors)
+                        Console.WriteLine($"Validation error on '{kvp.Key}': {err.ErrorMessage}");
 
                 return View(model);
             }
 
-
             try
             {
-                await _context.Events.AddAsync(model);
-                await _context.SaveChangesAsync();
+                var result = await _eventService.CreateEventAsync(
+                    model,
+                    actingRole: "Organizer",
+                    actingUserId: userId
+                );
+
+                if (!result.Success)
+                {
+                    ModelState.AddModelError("", result.Message);
+                    return View(model);
+                }
+
                 return RedirectToAction("OrgEvents", "Organizer");
             }
-            catch
+            catch (Exception ex)
             {
-                ModelState.AddModelError("", "An error occurred while saving to the database.");
+                Console.WriteLine($"Error saving event: {ex}");
+                ModelState.AddModelError("", "An unexpected error occurred. Please try again.");
                 return View(model);
             }
         }

@@ -8,8 +8,8 @@
         public Service Service { get; set; }
 
         public Users User { get; set; }
-        public List<Events> Events { get; set; }
-        public Events Event { get; set; }
+        public List<Eventsss> Events { get; set; }
+        public Eventsss Event { get; set; }
         public List<Tickets> Tickets { get; set; }
     }
 }

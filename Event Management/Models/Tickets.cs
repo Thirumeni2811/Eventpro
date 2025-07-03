@@ -39,7 +39,7 @@ namespace Event_Management.Models
         public string? PaymentStatus { get; set; }
 
         [ForeignKey("EventId")]
-        public Events Event { get; set; }
+        public Eventsss Event { get; set; }
 
         [ForeignKey("UserId")]
         public Users User { get; set; }

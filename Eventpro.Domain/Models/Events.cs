@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Eventpro.Domain.Models
+﻿namespace Eventpro.Domain.Models
 {
     public class Events
     {
