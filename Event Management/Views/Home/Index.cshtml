@@ -1,6 +1,4 @@
-﻿@model Event_Management.Models.HomeView
-
-@{
+﻿@{
     ViewData["Title"] = "Home Page";
     Layout = null;
 }
@@ -43,13 +41,13 @@
             <li><a href="#service">Services</a></li>
             <li><a href="#gallery">Gallery</a></li>
             <li><a href="#footer">Contact Us</a></li>
-            @if (Model.Role == "User")
+            @if (ViewBag.Role == "User")
             {
                 <li>
                     <a asp-controller="User" asp-action="UserEvent">My Events</a>
                 </li>
             }
-            else if (Model.Role == "Organizer")
+            else if (ViewBag.Role == "Organizer")
             {
                 <li>
                     <a asp-controller="Organizer" asp-action="OrgEvents">My Events</a>
@@ -139,7 +137,7 @@
         </p>
         @* <div id="serviceContainer" class="serGrid"></div> *@
         <div class="serGrid">
-            @foreach (var service in Model.Services)
+            @foreach (var service in (IEnumerable<Eventpro.Domain.Models.Services>)ViewBag.Services)
             {
                 <div class="card">
                     <img src="@service.Img" alt="@service.Title" />
@@ -160,7 +158,7 @@
             @* <div id="provideContainer" class="marquee-content"></div> *@
             <div class="marquee-wrapper">
                 <div class="marquee-content">
-                    @foreach (var service in Model.Provides)
+                @foreach (var service in (IEnumerable<Eventpro.Domain.Models.Provides>)ViewBag.Provides)
                     {
                         <div class="card2">
                             <img src="@service.Img" alt="@service.Title" />
@@ -181,7 +179,7 @@
 
         @* <div id="gallerContainer" class="galGrid"></div> *@
         <div class="galGrid">
-            @foreach (var item in Model.Gallery)
+            @foreach (var item in (IEnumerable<Eventpro.Domain.Models.Gallery>)ViewBag.Gallery)
             {
                 <div class="card3">
                     <img src="@item.Banner" alt="@item.Name" />

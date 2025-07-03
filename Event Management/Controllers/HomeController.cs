@@ -44,24 +44,58 @@ namespace Event_Management.Controllers
                 userId = Guid.Empty;
             }
 
-            Users user = null;
+            Users? user = null;
             if (userId != Guid.Empty)
             {
-                var userResult = await _userService.GetUserByIdAsync(userId);
-                user = userResult.Data;
+                try
+                {
+                    var userResult = await _userService.GetUserByIdAsync(userId);
+                    if (userResult.Success && userResult.Data != null)
+                    {
+                        user = userResult.Data;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Error retrieving user for userId {UserId}", userId);
+                    // Fallback to null
+                    user = null;
+                }
             }
 
-            // Fetch Gallery
-            var galleryResponse = await _galleryService.GetAllAsync();
-            var galleries = galleryResponse.Data ?? Enumerable.Empty<Gallery>();
+            IEnumerable<Gallery> galleries = Enumerable.Empty<Gallery>();
+            IEnumerable<Provides> provides = Enumerable.Empty<Provides>();
+            IEnumerable<Services> services = Enumerable.Empty<Services>();
 
-            // Fetch Provides
-            var provideResponse = await _provideService.GetAllAsync();
-            var provides = provideResponse.Data ?? Enumerable.Empty<Provides>();
+            try
+            {
+                var galleryResponse = await _galleryService.GetAllAsync();
+                galleries = galleryResponse.Data ?? Enumerable.Empty<Gallery>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching gallery data.");
+            }
 
-            // Fetch Services
-            var servicesResponse = await _servService.GetAllAsync();
-            var services = servicesResponse.Data ?? Enumerable.Empty<Services>();
+            try
+            {
+                var provideResponse = await _provideService.GetAllAsync();
+                provides = provideResponse.Data ?? Enumerable.Empty<Provides>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching provides data.");
+            }
+
+            try
+            {
+                var servicesResponse = await _servService.GetAllAsync();
+                services = servicesResponse.Data ?? Enumerable.Empty<Services>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching services data.");
+            }
 
             ViewBag.Gallery = galleries.ToList();
             ViewBag.Provides = provides.ToList();
