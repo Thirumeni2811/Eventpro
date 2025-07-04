@@ -4,7 +4,7 @@
     {
         public Guid Id { get; set; }
         public Guid UserId { get; set; }
-        public Users User { get; set; }
+        public Users? User { get; set; }
 
         // Step 1: Basic Info
         public string? Name { get; set; }

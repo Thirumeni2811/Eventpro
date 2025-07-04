@@ -178,94 +178,121 @@ namespace Event_Management.Controllers
         {
             try
             {
-                Console.WriteLine("Update called with ID: " + id);
-
                 Guid userId = TokenHelper.GetIdFromToken(Request);
-                Console.WriteLine("User ID from token: " + userId);
 
                 var userResponse = await _userService.GetUserByIdAsync(userId);
-                Console.WriteLine("User fetched: " + (userResponse.Success ? "Success" : "Fail"));
-
                 if (!userResponse.Success || userResponse.Data == null || userResponse.Data.Role != "Organizer")
                 {
-                    Console.WriteLine("Unauthorized user or invalid role.");
                     return RedirectToAction("Create", "Account");
                 }
 
-                // Validate
+                // Validate user input
                 EventValidationHelper.ValidateBasics(model, ModelState);
                 EventValidationHelper.ValidateVenue(model, ModelState);
                 EventValidationHelper.ValidateTickets(model, ModelState);
                 EventValidationHelper.ValidateProgram(model, ModelState);
                 EventValidationHelper.ValidateCatering(model, ModelState);
 
+                ModelState.Remove("User");
+
                 if (!ModelState.IsValid)
                 {
-                    Console.WriteLine("ModelState invalid. Returning to view.");
                     return View(model);
                 }
 
+                // Fetch the existing event
                 var existingResponse = await _eventService.GetEventByIdAsync(id);
-                Console.WriteLine("Existing event fetch: " + (existingResponse.Success ? "Found" : "Not Found"));
-
                 if (!existingResponse.Success || existingResponse.Data == null)
                 {
-                    Console.WriteLine("Event not found.");
                     TempData["ErrorMessage"] = "Event not found.";
                     return RedirectToAction("OrgEvents");
                 }
 
                 var existingEvent = existingResponse.Data;
 
-                Console.WriteLine("Updating fields...");
+                // Update only the relevant fields
+                existingEvent.Name = model.Name;
+                existingEvent.Type = model.Type;
+                existingEvent.Description = model.Description;
+                existingEvent.Theme = model.Theme;
+                existingEvent.DateTime = model.DateTime;
+                existingEvent.Duration = model.Duration;
+                existingEvent.Venue = model.Venue;
+                existingEvent.VenueName = model.VenueName;
+                existingEvent.Address = model.Address;
+                existingEvent.Environment = model.Environment;
+                existingEvent.Capacity = model.Capacity;
+                existingEvent.Accessibility = model.Accessibility;
+                existingEvent.IsPaid = model.IsPaid;
+                existingEvent.TicketPricing = model.TicketPricing;
+                existingEvent.Payment = model.Payment;
+                existingEvent.MaxAttendees = model.MaxAttendees;
+                existingEvent.RegistrationDeadline = model.RegistrationDeadline;
+                existingEvent.CancellationPolicy = model.CancellationPolicy;
+                existingEvent.Agenda = model.Agenda;
+                existingEvent.Activities = model.Activities;
+                existingEvent.Speakers = model.Speakers;
+                existingEvent.Breaks = model.Breaks;
+                existingEvent.Platforms = model.Platforms;
+                existingEvent.Audience = model.Audience;
+                existingEvent.Sponsors = model.Sponsors;
+                existingEvent.SoundSystem = model.SoundSystem;
+                existingEvent.Projection = model.Projection;
+                existingEvent.LiveStreaming = model.LiveStreaming;
+                existingEvent.Internet = model.Internet;
+                existingEvent.PowerBackup = model.PowerBackup;
+                existingEvent.Volunteers = model.Volunteers;
+                existingEvent.Security = model.Security;
+                existingEvent.Coordinators = model.Coordinators;
+                existingEvent.Medical = model.Medical;
+                existingEvent.Veg = model.Veg;
+                existingEvent.NonVeg = model.NonVeg;
+                existingEvent.Menu = model.Menu;
+                existingEvent.ServingStyle = model.ServingStyle;
+                existingEvent.GuestCount = model.GuestCount;
+                existingEvent.Feedback = model.Feedback;
+                existingEvent.Media = model.Media;
+                existingEvent.Report = model.Report;
+                existingEvent.Thanks = model.Thanks;
+                existingEvent.Message = model.Message;
 
-                // Banner handling
+                // Process the banner
                 if (BannerFile != null && BannerFile.Length > 0)
                 {
-                    Console.WriteLine("Banner file detected.");
                     try
                     {
                         existingEvent.Banner = await FileUploadHelper.SaveFileAsync(BannerFile, "banners");
-                        Console.WriteLine("Banner uploaded successfully.");
                     }
                     catch
                     {
-                        Console.WriteLine("Banner upload failed.");
                         ModelState.AddModelError("BannerFile", "Invalid banner file.");
                         return View(existingEvent);
                     }
-                }
-                else
-                {
-                    Console.WriteLine("No new banner provided. Keeping existing.");
                 }
 
                 EventValidationHelper.ValidatePromotions(existingEvent, BannerFile, ModelState);
 
                 if (!ModelState.IsValid)
                 {
-                    Console.WriteLine("ModelState invalid after promotion validation.");
                     return View(existingEvent);
                 }
 
                 existingEvent.UserId = userId;
 
-                Console.WriteLine("Calling UpdateEventAsync...");
+                // Call update
                 var updateResponse = await _eventService.UpdateEventAsync(existingEvent, "Organizer", userId);
 
                 if (!updateResponse.Success)
                 {
-                    Console.WriteLine("Update failed: " + updateResponse.Message);
                     ModelState.AddModelError("", updateResponse.Message);
                     return View(existingEvent);
                 }
 
-                Console.WriteLine("Update successful. Redirecting to OrgEvents.");
                 return RedirectToAction("OrgEvents", "Organizer");
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Update error: " + ex.Message);
+                Console.WriteLine($"Update error: {ex.Message}");
                 ModelState.AddModelError("", "An unexpected error occurred.");
                 return View(model);
             }

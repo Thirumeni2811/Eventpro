@@ -1,5 +1,6 @@
 ﻿using Event_Management.Data;
 using Event_Management.Helpers;
+using Event_Management.ViewModels;
 using Eventpro.Domain.Exceptions;
 using Eventpro.Domain.Interfaces.IEvents;
 using Eventpro.Domain.Interfaces.ITicket;
@@ -72,15 +73,20 @@ namespace Event_Management.Controllers
 
                 var events = eventsResponse.Data ?? Enumerable.Empty<Events>();
 
-                ViewBag.User = user;
-                ViewBag.Events = events.ToList();
+                var model = new AllEventsViewModel
+                {
+                    User = user,
+                    Events = events.ToList(),
+                    Role = user.Role
+                };
+
+                // Keep search/filter in ViewBag as requested
                 ViewBag.SearchQuery = eventName;
                 ViewBag.StatusFilter = status;
                 ViewBag.TypeFilter = type;
                 ViewBag.VenueFilter = venue;
-                ViewBag.Role = user.Role;
 
-                return View();
+                return View(model);
             }
             catch (Exception)
             {
@@ -130,12 +136,15 @@ namespace Event_Management.Controllers
                     ? eventData.MaxAttendees - bookedQuantity
                     : (int?)null;
 
-                ViewBag.User = user;
-                ViewBag.Event = eventData;
-                ViewBag.Organizer = organizer;
-                ViewBag.RemainingTickets = remainingTickets;
+                var model = new EventTicketViewModel
+                {
+                    User = user,
+                    Event = eventData,
+                    Organizer = organizer,
+                    RemainingTickets = remainingTickets
+                };
 
-                return View();
+                return View(model);
             }
             catch (Exception ex)
             {
@@ -167,10 +176,13 @@ namespace Event_Management.Controllers
                 }
                 var eventData = eventResponse.Data;
 
-                ViewBag.User = user;
-                ViewBag.Event = eventData;
+                var model = new BuyTicketsViewModel
+                {
+                    User = user,
+                    Event = eventData
+                };
 
-                return View();
+                return View(model);
             }
             catch (Exception ex)
             {
@@ -320,11 +332,6 @@ namespace Event_Management.Controllers
             catch (ServiceException ex)
             {
                 TempData["ErrorMessage"] = ex.Message;
-                return RedirectToAction("AllEvents", "Event");
-            }
-            catch (Exception ex)
-            {
-                TempData["ErrorMessage"] = "An unexpected error occurred.";
                 return RedirectToAction("AllEvents", "Event");
             }
         }
