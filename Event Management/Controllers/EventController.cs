@@ -663,7 +663,7 @@ namespace Event_Management.Controllers
         //step - 10 : Event Info
         [HttpPost]
         [Route("/event-info")]
-        public async Task<IActionResult> Main(Events model, IFormFile BannerFile)
+        public async Task<IActionResult> Main(Events model, IFormFile? BannerFile)
         {
             Guid userId;
             try
@@ -711,6 +711,8 @@ namespace Event_Management.Controllers
             }
 
             EventValidationHelper.ValidatePromotions(model, BannerFile, ModelState);
+
+            ModelState.Remove("User");
 
             if (!ModelState.IsValid)
             {

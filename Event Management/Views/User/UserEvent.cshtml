@@ -72,7 +72,11 @@
                         <img src="@item.Event.Banner" alt="@item.Event.Name" />
                     </div>
                     <div class="data">
-                        <h1>@item.Event.Name | @item.Event.User.Name</h1>
+                        <h1>
+                            @item.Event.Name
+                            | @((item.Event.User != null) ? item.Event.User.Name : "Organizer Unknown")
+                        </h1>
+
                         <div>
                             @(
                                                 item?.Event?.DateTime.HasValue == true

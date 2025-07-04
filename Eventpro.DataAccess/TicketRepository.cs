@@ -91,6 +91,7 @@ namespace Eventpro.DataAccess
             {
                 return await _context.Tickets
                     .Include(t => t.Event)
+                    .ThenInclude(e => e.User)
                     .Where(t => t.UserId == userId)
                     .ToListAsync();
             }

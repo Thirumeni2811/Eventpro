@@ -1,4 +1,4 @@
-﻿@model Event_Management.Models.Eventsss
+﻿@model Eventpro.Domain.Models.Events
 
 @{
     ViewData["Title"] = "Promotion and Communication";
@@ -18,9 +18,8 @@
     <div class="form-grid">
 
         <div class="form-group">
-            <label asp-for="BannerFile">Event Banner or Poster</label>
-            <input asp-for="BannerFile" type="file" accept="image/*" class="form-control" />
-            <span asp-validation-for="BannerFile" class="danger"></span>
+            <label for="BannerFile">Event Banner or Poster</label>
+            <input name="BannerFile" type="file" accept="image/*" class="form-control" />
         </div>
 
         <div class="form-group">
