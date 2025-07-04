@@ -1,4 +1,4 @@
-﻿@model Event_Management.Models.Eventsss
+﻿@model Eventpro.Domain.Models.Events
 
 @{
     ViewData["Title"] = Model?.Name ?? "Update Event";
@@ -210,9 +210,8 @@
                      alt="Event Banner"
                      onclick="$('#bannerInput').click();" />
 
-                <input asp-for="BannerFile" type="file" id="bannerInput" accept="image/*" style="display: none;" />
+                <input name="BannerFile" type="file" id="bannerInput" accept="image/*" style="display: none;" />
 
-                <span asp-validation-for="BannerFile" class="danger"></span>
             </div>
 
             <div class="form-promo2">

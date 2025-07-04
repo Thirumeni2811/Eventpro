@@ -1,4 +1,5 @@
 ﻿using Event_Management.Helpers;
+using Event_Management.ViewModels;
 using Eventpro.Domain.Interfaces.ITicket;
 using Eventpro.Domain.Interfaces.IUser;
 using Eventpro.Domain.Models;
@@ -25,10 +26,8 @@ namespace Event_Management.Controllers
         {
             try
             {
-                // Extract user ID from token
                 Guid userId = TokenHelper.GetIdFromToken(Request);
 
-                // Get user
                 var userResponse = await _userService.GetUserByIdAsync(userId);
                 if (!userResponse.Success || userResponse.Data == null)
                 {
@@ -36,7 +35,6 @@ namespace Event_Management.Controllers
                 }
                 var user = userResponse.Data;
 
-                // Get tickets
                 var ticketsResponse = await _ticketService.GetTicketsByUserIdAsync(userId, eventName, status);
                 if (!ticketsResponse.Success)
                 {
@@ -44,23 +42,25 @@ namespace Event_Management.Controllers
                 }
                 var tickets = ticketsResponse.Data ?? Enumerable.Empty<Tickets>();
 
-                // Get distinct events
                 var eventsResponse = await _ticketService.GetDistinctEventsByUserIdAsync(userId);
                 if (!eventsResponse.Success)
                 {
                     return BadRequest(eventsResponse.Message);
                 }
-                var events = eventsResponse.Data ?? Enumerable.Empty<Events>();
 
-                // Fill ViewBag
-                ViewBag.User = user;
-                ViewBag.Tickets = tickets.ToList();
-                ViewBag.Events = events.ToList();
-                ViewBag.SearchQuery = eventName;
-                ViewBag.StatusFilter = status;
-                ViewBag.Role = user.Role;
+                var model = new UserTicketsViewModel
+                {
+                    User = user,
+                    Tickets = ticketsResponse.Data?.ToList() ?? new List<Tickets>(),
+                    Events = eventsResponse.Data?.ToList() ?? new List<Events>(),
+                    Role = user.Role
+                };
 
-                return View();
+                // Keep search filters in ViewData
+                ViewData["SearchQuery"] = eventName;
+                ViewData["StatusFilter"] = status;
+
+                return View(model);
             }
             catch (Exception ex)
             {

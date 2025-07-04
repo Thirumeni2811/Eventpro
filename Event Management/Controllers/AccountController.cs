@@ -305,7 +305,7 @@ namespace Event_Management.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Route("/update-profile")]
-        public async Task<IActionResult> UpdateProfile(Users model, IFormFile ImageFile)
+        public async Task<IActionResult> UpdateProfile(Users model, IFormFile? ImageFile)
         {
             Guid userId;
 

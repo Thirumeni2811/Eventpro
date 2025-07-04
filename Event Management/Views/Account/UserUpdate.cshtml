@@ -1,4 +1,4 @@
-﻿@model Event_Management.Models.Users
+﻿@model Eventpro.Domain.Models.Users
 
 @{
     ViewData["Title"] = "Organization | Profile update";
@@ -9,25 +9,25 @@
     <link rel="stylesheet" href="~/css/update.css" />
 }
 
-<form asp-action="UserUpdate" asp-controller="Account" method="post" class="form-container" enctype="multipart/form-data">
+<form asp-action="UpdateProfile" asp-controller="Account" method="post" class="form-container" enctype="multipart/form-data">
     @Html.AntiForgeryToken()
 
     <div class="heading">Update User Profile</div>
     <div class="subheading">Keep your User profile updated</div>
 
     <div>
-        <label asp-for="ImageFile">
+        <label for="ImageFile">
             <div class="image-cont">
                 <img id="previewImage"
                      src="@(string.IsNullOrEmpty(Model?.Image)
-                                                                  ? Url.Content("~/images/Acc.png")
-                                                                  : Model.Image)"
+                                         ? Url.Content("~/images/Acc.png")
+                                         : Model.Image)"
                      alt="Profile"
                      class="profile-img" />
             </div>
         </label>
 
-        <input asp-for="ImageFile" type="file" id="ImageFile" accept="image/*" style="display: none;" />
+        <input name="ImageFile" type="file" id="ImageFile" accept="image/*" style="display: none;" />
     </div>
 
     <div class="form-grid4">

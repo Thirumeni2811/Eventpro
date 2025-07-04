@@ -1,7 +1,8 @@
-﻿@model Event_Management.Models.EventsView
+﻿@model Event_Management.ViewModels.OrganizerEventsViewModel
 
 @{
     ViewData["Title"] = Model.User?.Name ?? "Event Information";
+    ViewData["Role"] = Model.User?.Role ?? "Organizer";
     Layout = "~/Views/Shared/User.cshtml";
     var data = Model.User;
     var searchValue = ViewData["SearchQuery"] as string;

@@ -30,15 +30,25 @@ namespace Event_Management.Controllers
         {
             try
             {
-                Guid userId = TokenHelper.GetIdFromToken(Request);
+                Guid userId;
+                try
+                {
+                    userId = TokenHelper.GetIdFromToken(Request);
+                }
+                catch (Exception)
+                {
+                    return RedirectToAction("Signup", "Account");
+                }
 
                 var userResponse = await _userService.GetUserByIdAsync(userId);
-                if (!userResponse.Success || userResponse.Data == null)
+
+                if (userResponse == null || !userResponse.Success || userResponse.Data == null)
                 {
                     return RedirectToAction("Signup", "Account");
                 }
 
                 var user = userResponse.Data;
+
                 if (user.Role != "User")
                 {
                     return RedirectToAction("Signup", "Account");
@@ -49,6 +59,11 @@ namespace Event_Management.Controllers
                     status: status,
                     type: type,
                     venue: venue);
+
+                if (eventsResponse == null)
+                {
+                    throw new Exception("Events response is null.");
+                }
 
                 if (!eventsResponse.Success)
                 {
@@ -67,7 +82,7 @@ namespace Event_Management.Controllers
 
                 return View();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 TempData["ErrorMessage"] = "An unexpected error occurred.";
                 return RedirectToAction("Index", "Home");

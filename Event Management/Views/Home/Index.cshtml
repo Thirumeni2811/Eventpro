@@ -43,13 +43,13 @@
             <li><a href="#service">Services</a></li>
             <li><a href="#gallery">Gallery</a></li>
             <li><a href="#footer">Contact Us</a></li>
-            @if (ViewBag.Role == "User")
+            @if (Model.Role == "User")
             {
                 <li>
                     <a asp-controller="User" asp-action="UserEvent">My Events</a>
                 </li>
             }
-            else if (ViewBag.Role == "Organizer")
+            else if (Model.Role == "Organizer")
             {
                 <li>
                     <a asp-controller="Organizer" asp-action="OrgEvents">My Events</a>

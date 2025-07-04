@@ -1,6 +1,4 @@
-﻿@model Event_Management.Models.EventsView
-
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -30,13 +28,13 @@
                 <h2 class="profile-name">@Model?.User?.Name</h2>
 
                 <div class="profile-menu" id="profileMenu">
-                    @if (Model.Role == "Organizer")
+                    @if ((ViewData["Role"] as string) == "Organizer")
                     {
-                        <a asp-controller="Account" asp-action="OrgUpdate">Update</a>
+                        <a asp-controller="Account" asp-action="UpdateProfile">Update</a>
                     }
-                    else if (Model.Role == "User")
+                    else if ((ViewData["Role"] as string) == "User")
                     {
-                        <a asp-controller="Account" asp-action="UserUpdate">Update</a>
+                        <a asp-controller="Account" asp-action="UpdateProfile">Update</a>
                     }
                     <a href="#" id="logoutTrigger">Logout</a>
                 </div>
