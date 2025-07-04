@@ -31,6 +31,8 @@ namespace Eventpro.DataAccess
                 entity.Property(e => e.Role).IsRequired();
             });
 
+            modelBuilder.Entity<Users>().Ignore(u => u.CPassword);
+
             // Services table config
             modelBuilder.Entity<Services>(entity =>
             {

@@ -20,4 +20,7 @@ public interface IUserService
         string? role = null
     );
     Task<IServiceResponse<Users>> GetUserByIdAsync(Guid userId);
+    Task<IServiceResponse<IEnumerable<Users>>> GetOrganizersAsync(string actingRole);
+    Task<IServiceResponse<IEnumerable<Users>>> GetBuyersAsync(string actingRole);
+
 }

@@ -24,6 +24,7 @@ namespace Eventpro.Domain.Interfaces.IEvents
         Task AddAsync(Events evt);
         Task UpdateAsync(Events evt);
         Task DeleteAsync(Events evt);
+        Task<IEnumerable<Events>> GetEventsAsync();
         Task SaveChangesAsync();
     }
 }

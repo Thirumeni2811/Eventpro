@@ -48,5 +48,6 @@ namespace Eventpro.Domain.Interfaces.IEvents
             string actingRole,
             Guid actingUserId
         );
+        Task<IServiceResponse<IEnumerable<Events>>> GetEventsAsync(string actingRole);
     }
 }

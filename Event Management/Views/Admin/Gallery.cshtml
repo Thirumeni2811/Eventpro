@@ -1,4 +1,4 @@
-﻿@model Event_Management.Models.Gallery
+﻿@model Eventpro.Domain.Models.Gallery
 
 @{
     ViewData["Title"] = "Gallery";
@@ -21,7 +21,7 @@
                 <p class="img-title">Image</p>
                 @if (string.IsNullOrEmpty(Model?.Banner))
                 {
-                    <input asp-for="BannerFile" type="file" id="ImageFile" accept="image/*" class="file-input" />
+                    <input name="BannerFile" type="file" id="ImageFile" accept="image/*" class="file-input" />
                 }
                 else
                 {
@@ -33,7 +33,7 @@
                                  class="data-img" />
                         </div>
                     </label>
-                    <input asp-for="BannerFile" type="file" id="ImageFile" accept="image/*" style="display: none;" />
+                    <input name="BannerFile" type="file" id="ImageFile" accept="image/*" style="display: none;" />
 
                     <input type="hidden" asp-for="Banner" />
                 }
@@ -145,7 +145,7 @@
                 </thead>
                 <tbody>
                     @{
-                        var galleryList = (List<Event_Management.Models.Gallery>)ViewBag.GalleryList;
+                        var galleryList = (List<Eventpro.Domain.Models.Gallery>)ViewBag.GalleryList;
                     }
 
                     @if (galleryList.Any())

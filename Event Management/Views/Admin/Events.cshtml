@@ -1,4 +1,4 @@
-﻿@model Event_Management.Models.Eventsss
+﻿@model Event_Management.ViewModels.EventListViewModel
 
 @{
     ViewData["Title"] = "Users";
@@ -150,7 +150,7 @@
                 </div>
 
                 <div class="count">
-                    <p class="ct-total">Count - @ViewBag.EventsCount</p>
+                    <p class="ct-total">Count - @Model.EventsCount</p>
                 </div>
 
             </form>
@@ -173,14 +173,10 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @{
-                        var eventList = (List<Event_Management.Models.Eventsss>)ViewBag.EventList;
-                    }
-
-                    @if (eventList.Any())
+                    @if (Model.Events.Any())
                     {
                         var index = 1;
-                        foreach (var ev in eventList)
+                        foreach (var ev in Model.Events)
                         {
                             <tr>
                                 <td>@index</td>
@@ -204,7 +200,7 @@
                     else
                     {
                         <tr>
-                            <td colspan="6" class="no-data">
+                            <td colspan="10" class="no-data">
                                 No Events found.
                             </td>
                         </tr>

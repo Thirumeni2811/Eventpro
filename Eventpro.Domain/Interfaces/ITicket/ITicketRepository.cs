@@ -5,7 +5,7 @@
         public interface ITicketRepository
         {
             Task<IEnumerable<Tickets>> GetAllAsync();
-            Task<IEnumerable<Tickets>> GetFilteredAsync(
+            Task<IEnumerable<Tickets>> GetAllTicketsAsync(
                 Guid? ticketId,
                 Guid? eventId,
                 string? eventName,

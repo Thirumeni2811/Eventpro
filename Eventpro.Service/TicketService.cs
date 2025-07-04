@@ -38,7 +38,7 @@ namespace Eventpro.Service
                     );
                 }
 
-                var tickets = await _repository.GetFilteredAsync(
+                var tickets = await _repository.GetAllTicketsAsync(
                     ticketId,
                     eventId,
                     eventName,

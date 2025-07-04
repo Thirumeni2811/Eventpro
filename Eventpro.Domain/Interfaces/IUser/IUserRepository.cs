@@ -19,6 +19,9 @@ namespace Eventpro.Domain.Interfaces.IUser
             string? phoneNo = null,
             string? role = null
         );
+        Task<IEnumerable<Users>> GetOrganizersAsync();
+        Task<IEnumerable<Users>> GetBuyersAsync();
+
         Task SaveChangesAsync();
     }
 

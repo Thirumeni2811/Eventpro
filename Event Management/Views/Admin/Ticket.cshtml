@@ -1,4 +1,4 @@
-﻿@model Event_Management.Models.Tickets
+﻿@model Event_Management.ViewModels.TicketListViewModel
 
 @{
     ViewData["Title"] = "Users";
@@ -73,14 +73,11 @@
                     </tr>
                 </thead>
                     <tbody>
-                        @{
-                            var ticketsList = (List<Event_Management.Models.Tickets>)ViewBag.TicketList;
-                        }
 
-                        @if (ticketsList.Any())
+                        @if (Model.Tickets.Any())
                         {
                             var index = 1;
-                            foreach (var tic in ticketsList)
+                            foreach (var tic in Model.Tickets)
                             {
                                 <tr>
                                     <td>@index</td>

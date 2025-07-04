@@ -7,6 +7,7 @@ using Eventpro.Domain.Interfaces.ITicket;
 using Eventpro.Domain.Interfaces.IUser;
 using Eventpro.Domain.Models;
 using Eventpro.Domain.ResponseFormat;
+using Event_Management.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Event_Management.Controllers
@@ -97,8 +98,9 @@ namespace Event_Management.Controllers
         // CREATE AND UPDATE - Service
         [HttpPost("admin/services")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Service(Services model, IFormFile BannerFile)
+        public async Task<IActionResult> Service(Services model, IFormFile? BannerFile)
         {
+            Console.WriteLine("==>" + BannerFile);
             try
             {
                 var user = await GetAdminUser();
@@ -111,7 +113,7 @@ namespace Event_Management.Controllers
                     ModelState.AddModelError("Description", "Description is required.");
 
                 if (model.Id == Guid.Empty && (BannerFile == null || BannerFile.Length == 0))
-                    ModelState.AddModelError("BannerFile", "Please upload an image.");
+                    ModelState.AddModelError("", "Please upload an image.");
 
                 if (!ModelState.IsValid)
                 {
@@ -217,7 +219,7 @@ namespace Event_Management.Controllers
         // CREATE AND UPDATE
         [HttpPost("admin/provide")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Provide(Provides model, IFormFile BannerFile)
+        public async Task<IActionResult> Provide(Provides model, IFormFile? BannerFile)
         {
             try
             {
@@ -339,7 +341,7 @@ namespace Event_Management.Controllers
         // CREATE AND UPDATE - Gallery
         [HttpPost("admin/gallery")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Gallery(Gallery model, IFormFile BannerFile)
+        public async Task<IActionResult> Gallery(Gallery model, IFormFile? BannerFile)
         {
             try
             {
@@ -629,14 +631,14 @@ namespace Event_Management.Controllers
                 }
 
                 var allUsersResponse = await _userService.GetAllUsersAsync(user.Role);
+                var organizersResponse = await _userService.GetOrganizersAsync(user.Role);
 
-                ViewBag.Organizers = allUsersResponse.Data?
-                    .Where(u => u.Role == "Organizer")
-                    .OrderBy(u => u.Name)
-                    .ToList();
-
-                ViewBag.EventsList = eventsResponse.Data?.ToList();
-                ViewBag.EventsCount = eventsResponse.Data?.Count() ?? 0;
+                var model = new EventListViewModel
+                {
+                    Events = eventsResponse.Data?.ToList() ?? new List<Eventpro.Domain.Models.Events>(),
+                    EventsCount = eventsResponse.Data?.Count() ?? 0,
+                    Organizers = organizersResponse.Data?.ToList()
+                };
 
                 // Preserve filters for the view
                 ViewData["EventId"] = eventId?.ToString();
@@ -647,7 +649,7 @@ namespace Event_Management.Controllers
                 ViewData["Status"] = status;
                 ViewData["IsPaid"] = isPaid;
 
-                return View();
+                return View(model);
             }
             catch (Exception ex)
             {
@@ -725,7 +727,7 @@ namespace Event_Management.Controllers
             string eventName,
             string organizerName,
             string buyerName)
-                {
+        {
             try
             {
                 var user = await GetAdminUser();
@@ -749,36 +751,33 @@ namespace Event_Management.Controllers
                     return RedirectToAction("Index", "Home");
                 }
 
-                var allUsersResponse = await _userService.GetAllUsersAsync(user.Role);
-                var allEventsResponse = await _eventService.GetAllEventsAsync(user.Role);
+                var organizersResponse = await _userService.GetOrganizersAsync(user.Role);
+                var buyersResponse = await _userService.GetBuyersAsync(user.Role);
+                var eventsResponse = await _eventService.GetEventsAsync(user.Role);
 
+                if (!organizersResponse.Success || !buyersResponse.Success || !eventsResponse.Success)
+                {
+                    TempData["ErrorMessage"] = "Error loading lookup data.";
+                    return RedirectToAction("Index", "Home");
+                }
 
-                ViewBag.Organizers = allUsersResponse.Data?
-                    .Where(u => u.Role == "Organizer")
-                    .OrderBy(u => u.Name)
-                    .ToList();
+                var model = new TicketListViewModel
+                {
+                    Tickets = ticketsResponse.Data?.ToList() ?? new List<Eventpro.Domain.Models.Tickets>(),
+                    Organizers = organizersResponse.Data?.ToList() ?? new List<Eventpro.Domain.Models.Users>(),
+                    Buyers = buyersResponse.Data?.ToList() ?? new List<Eventpro.Domain.Models.Users>(),
+                    Events = eventsResponse.Data?.ToList() ?? new List<Eventpro.Domain.Models.Events>(),
+                };
 
-                ViewBag.Buyers = allUsersResponse.Data?
-                    .Where(u => u.Role == "User")
-                    .OrderBy(u => u.Name)
-                    .ToList();
-
-                ViewBag.Events = allEventsResponse.Data?
-                    .OrderBy(e => e.Name)
-                    .ToList();
-
-                ViewBag.TicketList = ticketsResponse.Data;
-
-                // Preserve filters for view
                 ViewData["TicketId"] = ticketId?.ToString();
                 ViewData["EventId"] = eventId?.ToString();
                 ViewData["EventName"] = eventName;
                 ViewData["OrganizerName"] = organizerName;
                 ViewData["BuyerName"] = buyerName;
 
-                return View();
+                return View(model);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 TempData["ErrorMessage"] = "An unexpected error occurred while loading tickets.";
                 return RedirectToAction("Index", "Home");

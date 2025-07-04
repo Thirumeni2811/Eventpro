@@ -314,5 +314,34 @@ namespace Eventpro.Service
                 throw new ServiceException("Error deleting event.", ex);
             }
         }
+
+        // GET EVENT
+        public async Task<IServiceResponse<IEnumerable<Events>>> GetEventsAsync(string actingRole)
+        {
+            try
+            {
+                if (actingRole != "Admin")
+                {
+                    return _responseFactory.CreateResponse<IEnumerable<Events>>(
+                        false,
+                        "Unauthorized.",
+                        ActionType.Unauthorized
+                    );
+                }
+
+                var events = await _repository.GetEventsAsync();
+
+                return _responseFactory.CreateResponse(
+                    true,
+                    "Events retrieved successfully.",
+                    ActionType.Retrieved,
+                    events
+                );
+            }
+            catch (Exception ex)
+            {
+                throw new ServiceException("Error retrieving events.", ex);
+            }
+        }
     }
 }

@@ -124,7 +124,10 @@ namespace Eventpro.Service
 
                 existing.Title = serv.Title;
                 existing.Description = serv.Description;
-                existing.Img = serv.Img;
+                if (!string.IsNullOrEmpty(serv.Img))
+                {
+                    existing.Img = serv.Img;
+                }
 
                 await _repository.UpdateAsync(existing);
                 await _repository.SaveChangesAsync();

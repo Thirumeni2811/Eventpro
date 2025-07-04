@@ -1,4 +1,5 @@
 using Event_Management.Helpers;
+using Event_Management.ViewModels;
 using Eventpro.Domain.Interfaces.IGallery;
 using Eventpro.Domain.Interfaces.IProvide;
 using Eventpro.Domain.Interfaces.IServ;
@@ -58,19 +59,16 @@ namespace Event_Management.Controllers
                 catch (Exception ex)
                 {
                     _logger.LogWarning(ex, "Error retrieving user for userId {UserId}", userId);
-                    // Fallback to null
                     user = null;
                 }
             }
 
-            IEnumerable<Gallery> galleries = Enumerable.Empty<Gallery>();
-            IEnumerable<Provides> provides = Enumerable.Empty<Provides>();
-            IEnumerable<Services> services = Enumerable.Empty<Services>();
+            var model = new HomeIndexViewModel();
 
             try
             {
                 var galleryResponse = await _galleryService.GetAllAsync();
-                galleries = galleryResponse.Data ?? Enumerable.Empty<Gallery>();
+                model.Galleries = galleryResponse.Data?.ToList() ?? new List<Gallery>();
             }
             catch (Exception ex)
             {
@@ -80,7 +78,7 @@ namespace Event_Management.Controllers
             try
             {
                 var provideResponse = await _provideService.GetAllAsync();
-                provides = provideResponse.Data ?? Enumerable.Empty<Provides>();
+                model.Provides = provideResponse.Data?.ToList() ?? new List<Provides>();
             }
             catch (Exception ex)
             {
@@ -90,19 +88,16 @@ namespace Event_Management.Controllers
             try
             {
                 var servicesResponse = await _servService.GetAllAsync();
-                services = servicesResponse.Data ?? Enumerable.Empty<Services>();
+                model.Services = servicesResponse.Data?.ToList() ?? new List<Services>();
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error fetching services data.");
             }
 
-            ViewBag.Gallery = galleries.ToList();
-            ViewBag.Provides = provides.ToList();
-            ViewBag.Services = services.ToList();
-            ViewBag.Role = user?.Role;
+            model.Role = user?.Role;
 
-            return View();
+            return View(model);
         }
 
         public IActionResult Privacy()

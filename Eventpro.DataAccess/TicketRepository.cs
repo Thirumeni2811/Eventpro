@@ -29,7 +29,7 @@ namespace Eventpro.DataAccess
             }
         }
 
-        public async Task<IEnumerable<Tickets>> GetFilteredAsync(
+        public async Task<IEnumerable<Tickets>> GetAllTicketsAsync(
             Guid? ticketId,
             Guid? eventId,
             string? eventName,
@@ -51,20 +51,29 @@ namespace Eventpro.DataAccess
                     query = query.Where(t => t.EventId == eventId.Value);
 
                 if (!string.IsNullOrWhiteSpace(eventName))
+                {
+                    var eventNameTrimmed = eventName.Trim().ToLower();
                     query = query.Where(t =>
                         t.Event != null &&
-                        t.Event.Name.Contains(eventName.Trim(), StringComparison.OrdinalIgnoreCase));
+                        t.Event.Name.ToLower().Contains(eventNameTrimmed));
+                }
 
                 if (!string.IsNullOrWhiteSpace(organizerName))
+                {
+                    var organizerNameTrimmed = organizerName.Trim().ToLower();
                     query = query.Where(t =>
                         t.Event != null &&
                         t.Event.User != null &&
-                        t.Event.User.Name.Contains(organizerName.Trim(), StringComparison.OrdinalIgnoreCase));
+                        t.Event.User.Name.ToLower().Contains(organizerNameTrimmed));
+                }
 
                 if (!string.IsNullOrWhiteSpace(buyerName))
+                {
+                    var buyerNameTrimmed = buyerName.Trim().ToLower();
                     query = query.Where(t =>
                         t.User != null &&
-                        t.User.Name.Contains(buyerName.Trim(), StringComparison.OrdinalIgnoreCase));
+                        t.User.Name.ToLower().Contains(buyerNameTrimmed));
+                }
 
                 return await query
                     .OrderByDescending(t => t.PurchaseDate)

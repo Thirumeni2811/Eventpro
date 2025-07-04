@@ -167,6 +167,19 @@ namespace Eventpro.DataAccess
                 throw new DatabaseException("Error deleting event.", ex);
             }
         }
+        public async Task<IEnumerable<Events>> GetEventsAsync()
+        {
+            try
+            {
+                return await _context.Events
+                    .OrderBy(e => e.Name)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new DatabaseException("Error retrieving events.", ex);
+            }
+        }
 
         public async Task SaveChangesAsync()
         {

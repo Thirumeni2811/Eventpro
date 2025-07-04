@@ -348,4 +348,61 @@ public class UserService : IUserService
         }
     }
 
+    // 9. Get Organizer (for filter)
+    public async Task<IServiceResponse<IEnumerable<Users>>> GetOrganizersAsync(string actingRole)
+    {
+        try
+        {
+            if (actingRole != "Admin")
+            {
+                return _responseFactory.CreateResponse<IEnumerable<Users>>(
+                    false,
+                    "Unauthorized.",
+                    ActionType.Unauthorized
+                );
+            }
+
+            var organizers = await _repository.GetOrganizersAsync();
+
+            return _responseFactory.CreateResponse(
+                true,
+                "Organizers retrieved successfully.",
+                ActionType.Retrieved,
+                organizers
+            );
+        }
+        catch (Exception ex)
+        {
+            throw new ServiceException("Error retrieving organizers.", ex);
+        }
+    }
+
+    // 10. Get Buyer (for filter)
+    public async Task<IServiceResponse<IEnumerable<Users>>> GetBuyersAsync(string actingRole)
+    {
+        try
+        {
+            if (actingRole != "Admin")
+            {
+                return _responseFactory.CreateResponse<IEnumerable<Users>>(
+                    false,
+                    "Unauthorized.",
+                    ActionType.Unauthorized
+                );
+            }
+
+            var buyers = await _repository.GetBuyersAsync();
+
+            return _responseFactory.CreateResponse(
+                true,
+                "Buyers retrieved successfully.",
+                ActionType.Retrieved,
+                buyers
+            );
+        }
+        catch (Exception ex)
+        {
+            throw new ServiceException("Error retrieving buyers.", ex);
+        }
+    }
 }

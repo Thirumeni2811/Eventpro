@@ -1,4 +1,4 @@
-﻿@model Event_Management.Models.Service
+﻿@model Eventpro.Domain.Models.Services
 
 @{
     ViewData["Title"] = "Service";
@@ -20,7 +20,7 @@
                 <p class="img-title">Image</p>
                 @if (string.IsNullOrEmpty(Model?.Img))
                 {
-                    <input asp-for="BannerFile" type="file" id="ImageFile" accept="image/*" class="file-input" />
+                    <input name="BannerFile" type="file" id="ImageFile" accept="image/*" class="file-input" />
                 }
                 else
                 {
@@ -32,7 +32,7 @@
                                  class="data-img" />
                         </div>
                     </label>
-                    <input asp-for="BannerFile" type="file" id="ImageFile" accept="image/*" style="display: none;" />
+                    <input name="BannerFile" type="file" id="ImageFile" accept="image/*" style="display: none;" />
 
                     <input type="hidden" asp-for="Img" />
                 }
@@ -100,7 +100,7 @@
                 </thead>
                 <tbody>
                     @{
-                        var list = (List<Event_Management.Models.Service>)ViewBag.ServicesList;
+                        var list = (List<Eventpro.Domain.Models.Services>)ViewBag.ServicesList;
                         if (list != null && list.Any())
                         {
                             var index = 1;

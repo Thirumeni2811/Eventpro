@@ -63,11 +63,11 @@ namespace Eventpro.DataAccess
         }
 
         public async Task<IEnumerable<Users>> GetFilteredAsync(
-    string? userId = null,
-    string? name = null,
-    string? email = null,
-    string? phoneNo = null,
-    string? role = null)
+            string? userId = null,
+            string? name = null,
+            string? email = null,
+            string? phoneNo = null,
+            string? role = null)
         {
             try
             {
@@ -157,6 +157,35 @@ namespace Eventpro.DataAccess
             catch (Exception ex)
             {
                 throw new DatabaseException("Error deleting user.", ex);
+            }
+        }
+
+        public async Task<IEnumerable<Users>> GetOrganizersAsync()
+        {
+            try
+            {
+                return await _context.Users
+                    .Where(u => u.Role == "Organizer")
+                    .OrderBy(u => u.Name)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new DatabaseException("Error retrieving organizers.", ex);
+            }
+        }
+        public async Task<IEnumerable<Users>> GetBuyersAsync()
+        {
+            try
+            {
+                return await _context.Users
+                    .Where(u => u.Role == "User")
+                    .OrderBy(u => u.Name)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new DatabaseException("Error retrieving buyers.", ex);
             }
         }
 

@@ -1,4 +1,6 @@
-﻿@{
+﻿@model Event_Management.ViewModels.HomeIndexViewModel
+
+@{
     ViewData["Title"] = "Home Page";
     Layout = null;
 }
@@ -137,7 +139,7 @@
         </p>
         @* <div id="serviceContainer" class="serGrid"></div> *@
         <div class="serGrid">
-            @foreach (var service in (IEnumerable<Eventpro.Domain.Models.Services>)ViewBag.Services)
+            @foreach (var service in Model.Services)
             {
                 <div class="card">
                     <img src="@service.Img" alt="@service.Title" />
@@ -158,7 +160,7 @@
             @* <div id="provideContainer" class="marquee-content"></div> *@
             <div class="marquee-wrapper">
                 <div class="marquee-content">
-                @foreach (var service in (IEnumerable<Eventpro.Domain.Models.Provides>)ViewBag.Provides)
+                @foreach (var service in Model.Provides)
                     {
                         <div class="card2">
                             <img src="@service.Img" alt="@service.Title" />
@@ -179,7 +181,7 @@
 
         @* <div id="gallerContainer" class="galGrid"></div> *@
         <div class="galGrid">
-            @foreach (var item in (IEnumerable<Eventpro.Domain.Models.Gallery>)ViewBag.Gallery)
+            @foreach (var item in Model.Galleries)
             {
                 <div class="card3">
                     <img src="@item.Banner" alt="@item.Name" />
