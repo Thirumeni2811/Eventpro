@@ -1,7 +1,7 @@
-﻿@model Event_Management.Models.EventsView
+﻿@model Event_Management.ViewModels.AdminEventDetailsViewModel
 
 @{
-    ViewData["Title"] = Model?.Event?.Name ?? "Event Information";
+    ViewData["Title"] = Model?.Event?.Name ?? "Event";
     Layout = "~/Views/Shared/Admin.cshtml";
     var data = Model?.Event?.User;
 }
@@ -178,7 +178,7 @@
                 </div>
                 <div class="pair">
                     <p class="key">Tickets Sold</p>
-                    <p class="value">@((Model?.TicketsCount != null) ? Model.TicketsCount.ToString() : "-")</p>
+                    <p class="value">@((Model?.TotalTickets != null) ? Model.TotalTickets.ToString() : "-")</p>
                 </div>
                 <div class="pair">
                     <p class="key">Remaining Tickets</p>

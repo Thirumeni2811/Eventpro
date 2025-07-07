@@ -635,7 +635,7 @@ namespace Event_Management.Controllers
 
                 var model = new EventListViewModel
                 {
-                    Events = eventsResponse.Data?.ToList() ?? new List<Eventpro.Domain.Models.Events>(),
+                    Events = eventsResponse.Data?.ToList() ?? new List<Events>(),
                     EventsCount = eventsResponse.Data?.Count() ?? 0,
                     Organizers = organizersResponse.Data?.ToList()
                 };
@@ -678,6 +678,7 @@ namespace Event_Management.Controllers
                 }
 
                 var evt = eventResponse.Data;
+                var organizer = evt.User;
 
                 var ticketsResponse = await _ticketService.GetTicketsByEventIdAsync(id, "Admin");
                 if (!ticketsResponse.Success)
@@ -716,7 +717,8 @@ namespace Event_Management.Controllers
                     RemainingTickets = remainingTickets,
                     TotalTicketPrice = totalTicketPrice,
                     TotalBookingFee = totalBookingFee,
-                    GrandTotalPrice = grandTotalPrice
+                    GrandTotalPrice = grandTotalPrice,
+                    Organizer = organizer
                 };
 
                 return View(model);
