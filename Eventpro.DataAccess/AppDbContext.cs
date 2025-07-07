@@ -1,14 +1,26 @@
 ﻿using Eventpro.Domain.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
+using System.Data.SqlTypes;
 
 namespace Eventpro.DataAccess
 {
     public class AppDbContext : DbContext
+    // AppDbContext inherits from DbContext
+    // DbContext is the core class of Entity Framework Core
+    //A session with your database
+    //Map C# classes to tables
+    //Perform CRUD operations
     {
         public AppDbContext(DbContextOptions<AppDbContext> options)
             : base(options)
         { }
+        //options
+        //The connection string
+        //The provider(SQL Server, SQLite, etc.)
 
+        //DbSet<T> represents a table in the database
         public DbSet<Users> Users { get; set; }
         public DbSet<Gallery> Gallery { get; set; }
         public DbSet<Services> Services { get; set; }

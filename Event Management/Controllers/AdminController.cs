@@ -692,21 +692,34 @@ namespace Event_Management.Controllers
                     return BadRequest(countsResponse.Message);
                 }
                 var ticketTypeCounts = countsResponse.Data
-                    .Select(c => new { c.Type, c.Quantity })
+                    .Select(c => new TicketTypeCountViewModel
+                    {
+                        Type = c.Type,
+                        Quantity = c.Quantity
+                    })
                     .ToList();
 
-                ViewBag.Event = evt;
-                ViewBag.Tickets = tickets;
-                ViewBag.TicketTypeCounts = ticketTypeCounts;
-                ViewBag.TicketsCount = tickets.Sum(t => t.Quantity);
-                ViewBag.RemainingTickets = evt.MaxAttendees.HasValue
-                    ? evt.MaxAttendees - tickets.Sum(t => t.Quantity)
+                var totalTickets = tickets.Sum(t => t.Quantity);
+                var remainingTickets = evt.MaxAttendees.HasValue
+                    ? evt.MaxAttendees - totalTickets
                     : (int?)null;
-                ViewBag.TotalTicketPrice = tickets.Sum(t => t.TicketPrice * t.Quantity);
-                ViewBag.TotalBookingFee = tickets.Sum(t => t.BookingFee);
-                ViewBag.GrandTotalPrice = tickets.Sum(t => t.TotalPrice);
+                var totalTicketPrice = tickets.Sum(t => t.TicketPrice * t.Quantity);
+                var totalBookingFee = tickets.Sum(t => t.BookingFee);
+                var grandTotalPrice = tickets.Sum(t => t.TotalPrice);
 
-                return View();
+                var model = new AdminEventDetailsViewModel
+                {
+                    Event = evt,
+                    Tickets = tickets,
+                    TicketTypeCounts = ticketTypeCounts,
+                    TotalTickets = totalTickets,
+                    RemainingTickets = remainingTickets,
+                    TotalTicketPrice = totalTicketPrice,
+                    TotalBookingFee = totalBookingFee,
+                    GrandTotalPrice = grandTotalPrice
+                };
+
+                return View(model);
             }
             catch (Exception ex)
             {
