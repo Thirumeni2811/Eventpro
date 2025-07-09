@@ -12,9 +12,6 @@ using Eventpro.Domain.Interfaces.IProvide;
 using Eventpro.Domain.Interfaces.ITicket;
 using Eventpro.Domain.Interfaces.IEvents;
 
-//Test
-//Test2
-
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
