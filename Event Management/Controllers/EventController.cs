@@ -1,12 +1,14 @@
 ﻿using Event_Management.Helpers;
 using Eventpro.Domain.Interfaces.IEvents;
 using Eventpro.Domain.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 
 namespace Event_Management.Controllers
 {
+    [Authorize(Roles = "Organizer")]
     public class EventController : Controller
     {
 
@@ -19,19 +21,11 @@ namespace Event_Management.Controllers
             _userService = userService;
         }
 
-        private bool IsTokenValid()
-        {
-            return HttpContext.Request.Cookies.TryGetValue("token", out string? token) && !string.IsNullOrWhiteSpace(token);
-        }
-
         // Step -1 : Basic Event information
         [HttpGet]
         [Route("/create-event")]
         public async Task<IActionResult> Basics()
         {
-            if (!IsTokenValid())
-                return RedirectToAction("Create", "Account");
-
             // Extract userId from token
             var userId = TokenHelper.GetIdFromToken(Request);
             if (userId == Guid.Empty)
@@ -56,9 +50,6 @@ namespace Event_Management.Controllers
         [Route("/venue-details")]
         public IActionResult Offline()
         {
-            if (!IsTokenValid())
-                return RedirectToAction("Create", "Account");
-
             var eventJson = HttpContext.Session.GetString("EventData");
 
             if (string.IsNullOrEmpty(eventJson))
@@ -81,9 +72,6 @@ namespace Event_Management.Controllers
         [Route("/tickets")]
         public IActionResult Tickets()
         {
-            if (!IsTokenValid())
-                return RedirectToAction("Create", "Account");
-
             var eventJson = HttpContext.Session.GetString("EventData");
 
             if (string.IsNullOrEmpty(eventJson))
@@ -101,9 +89,6 @@ namespace Event_Management.Controllers
         [Route("/program-schedule")]
         public IActionResult Schedule()
         {
-            if (!IsTokenValid())
-                return RedirectToAction("Create", "Account");
-
             var eventJson = HttpContext.Session.GetString("EventData");
 
             if (string.IsNullOrEmpty(eventJson))
@@ -120,9 +105,6 @@ namespace Event_Management.Controllers
         [Route("/promotion")]
         public IActionResult Promotion()
         {
-            if (!IsTokenValid())
-                return RedirectToAction("Create", "Account");
-
             var eventJson = HttpContext.Session.GetString("EventData");
 
             if (string.IsNullOrEmpty(eventJson))
@@ -139,9 +121,6 @@ namespace Event_Management.Controllers
         [Route("/technical-requirements")]
         public IActionResult Technical()
         {
-            if (!IsTokenValid())
-                return RedirectToAction("Create", "Account");
-
             var eventJson = HttpContext.Session.GetString("EventData");
 
             if (string.IsNullOrEmpty(eventJson))
@@ -158,9 +137,6 @@ namespace Event_Management.Controllers
         [Route("/staffs-management")]
         public IActionResult Staffs()
         {
-            if (!IsTokenValid())
-                return RedirectToAction("Create", "Account");
-
             var eventJson = HttpContext.Session.GetString("EventData");
 
             if (string.IsNullOrEmpty(eventJson))
@@ -177,9 +153,6 @@ namespace Event_Management.Controllers
         [Route("/catering")]
         public IActionResult Catering()
         {
-            if (!IsTokenValid())
-                return RedirectToAction("Create", "Account");
-
             var eventJson = HttpContext.Session.GetString("EventData");
 
             if (string.IsNullOrEmpty(eventJson))
@@ -196,9 +169,6 @@ namespace Event_Management.Controllers
         [Route("/post-event")]
         public IActionResult Post()
         {
-            if (!IsTokenValid())
-                return RedirectToAction("Create", "Account");
-
             var eventJson = HttpContext.Session.GetString("EventData");
 
             if (string.IsNullOrEmpty(eventJson))
@@ -215,9 +185,6 @@ namespace Event_Management.Controllers
         [Route("/event-info")]
         public IActionResult Main()
         {
-            if (!IsTokenValid())
-                return RedirectToAction("Create", "Account");
-
             var eventJson = HttpContext.Session.GetString("EventData");
             if (string.IsNullOrEmpty(eventJson))
             {

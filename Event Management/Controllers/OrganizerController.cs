@@ -5,11 +5,13 @@ using Eventpro.Domain.Interfaces.ITicket;
 using Eventpro.Domain.Interfaces.IUser;
 using Eventpro.Domain.Models;
 using Eventpro.Service;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace Event_Management.Controllers
 {
+    [Authorize(Roles = "Organizer")]
     public class OrganizerController : Controller
     {
         private readonly IUserService _userService;

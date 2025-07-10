@@ -1,7 +1,8 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Http;
+using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
-using Microsoft.AspNetCore.Http;
+using System.Security.Claims;
 
 namespace Event_Management.Helpers
 {
@@ -16,12 +17,14 @@ namespace Event_Management.Helpers
             var handler = new JwtSecurityTokenHandler();
             var jwtToken = handler.ReadJwtToken(token);
 
-            var uidClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "uid");
+            var uidClaim = jwtToken.Claims.FirstOrDefault(c =>
+                c.Type == ClaimTypes.NameIdentifier || c.Type == "sub");
 
-            if (uidClaim == null || !Guid.TryParse(uidClaim.Value, out Guid orgId))
-                throw new Exception("Invalid or missing uid in token");
+            if (uidClaim == null || !Guid.TryParse(uidClaim.Value, out Guid userId))
+                throw new Exception("Invalid or missing user ID in token");
 
-            return orgId;
+            return userId;
         }
+
     }
 }

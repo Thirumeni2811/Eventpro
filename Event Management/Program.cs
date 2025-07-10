@@ -71,7 +71,6 @@ builder.Services.AddAuthentication("Bearer")
         {
             OnMessageReceived = context =>
             {
-                // Check for token in "AccessToken" cookie
                 var accessToken = context.HttpContext.Request.Cookies["Token"];
                 if (!string.IsNullOrEmpty(accessToken))
                 {

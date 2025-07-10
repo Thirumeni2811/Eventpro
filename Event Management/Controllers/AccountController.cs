@@ -1,5 +1,6 @@
 ﻿using Event_Management.Helpers;
 using Eventpro.Domain.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Event_Management.Controllers
@@ -264,7 +265,7 @@ namespace Event_Management.Controllers
         /*--------------------------------------
                     U P D A T E 
         --------------------------------------*/
-
+        [Authorize]
         [HttpGet]
         [Route("/update-profile")]
         public async Task<IActionResult> UpdateProfile()
@@ -302,6 +303,7 @@ namespace Event_Management.Controllers
             }
         }
 
+        [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Route("/update-profile")]

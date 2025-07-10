@@ -3,6 +3,7 @@ using Event_Management.ViewModels;
 using Eventpro.Domain.Interfaces.ITicket;
 using Eventpro.Domain.Interfaces.IUser;
 using Eventpro.Domain.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Event_Management.Controllers
@@ -20,6 +21,7 @@ namespace Event_Management.Controllers
             _ticketService = ticketService;
         }
 
+        [Authorize]
         [HttpGet]
         [Route("my-tickets")]
         public async Task<IActionResult> UserEvent(string eventName, string status)

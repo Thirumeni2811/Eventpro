@@ -6,11 +6,13 @@ using Eventpro.Domain.Interfaces.IEvents;
 using Eventpro.Domain.Interfaces.ITicket;
 using Eventpro.Domain.Interfaces.IUser;
 using Eventpro.Domain.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace Event_Management.Controllers
 {
+    [Authorize(Roles = "User")]
     public class TicketController : Controller
     {
         private readonly IUserService _userService;
