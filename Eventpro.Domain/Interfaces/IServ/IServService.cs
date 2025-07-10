@@ -7,8 +7,8 @@ namespace Eventpro.Domain.Interfaces.IServ
     {
         Task<IServiceResponse<IEnumerable<Services>>> GetAllAsync(string? titleFilter = null);
         Task<IServiceResponse<Services?>> GetByIdAsync(Guid id);
-        Task<IServiceResponse<Services>> CreateAsync(Services serv, string actingRole);
-        Task<IServiceResponse<Services>> UpdateAsync(Services serv, string actingRole);
+        Task<IServiceResponse<Services>> CreateAsync(Services serv);
+        Task<IServiceResponse<Services>> UpdateAsync(Services serv);
         Task<IServiceResponse<bool>> DeleteAsync(Guid id);
     }
 }

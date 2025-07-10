@@ -39,7 +39,7 @@ public class UserService : IUserService
             await _repository.AddAsync(user);
             await _repository.SaveChangesAsync();
 
-            string token = _jwtHelper.GenerateToken(user.Id, user.Email);
+            string token = _jwtHelper.GenerateToken(user.Id, user.Email, user.Role);
 
             return _responseFactory.CreateResponse(
                 true,
@@ -75,7 +75,7 @@ public class UserService : IUserService
             await _repository.AddAsync(user);
             await _repository.SaveChangesAsync();
 
-            string token = _jwtHelper.GenerateToken(user.Id, user.Email);
+            string token = _jwtHelper.GenerateToken(user.Id, user.Email, user.Role);
 
             return _responseFactory.CreateResponse(
                 true,
@@ -135,7 +135,7 @@ public class UserService : IUserService
             );
         }
 
-        var token = _jwtHelper.GenerateToken(user.Id, user.Email);
+        var token = _jwtHelper.GenerateToken(user.Id, user.Email, user.Role);
 
         return _responseFactory.CreateResponse(
             true,
@@ -236,7 +236,6 @@ public class UserService : IUserService
 
     // 6. Get all users (Admin only)
     public async Task<IServiceResponse<IEnumerable<Users>>> GetAllUsersAsync(
-        string actingRole,
         string? userId = null,
         string? name = null,
         string? email = null,
@@ -245,15 +244,6 @@ public class UserService : IUserService
     {
         try
         {
-            if (actingRole != "Admin")
-            {
-                return _responseFactory.CreateResponse<IEnumerable<Users>>(
-                    false,
-                    "Unauthorized.",
-                    ActionType.Unauthorized
-                );
-            }
-
             var users = await _repository.GetFilteredAsync(userId, name, email, phoneNo, role);
 
             return _responseFactory.CreateResponse(
@@ -333,7 +323,7 @@ public class UserService : IUserService
                 );
             }
 
-            var token = _jwtHelper.GenerateToken(user.Id, user.Email);
+            var token = _jwtHelper.GenerateToken(user.Id, user.Email, user.Role);
 
             return _responseFactory.CreateResponse(
                 true,
@@ -349,19 +339,10 @@ public class UserService : IUserService
     }
 
     // 9. Get Organizer (for filter)
-    public async Task<IServiceResponse<IEnumerable<Users>>> GetOrganizersAsync(string actingRole)
+    public async Task<IServiceResponse<IEnumerable<Users>>> GetOrganizersAsync()
     {
         try
         {
-            if (actingRole != "Admin")
-            {
-                return _responseFactory.CreateResponse<IEnumerable<Users>>(
-                    false,
-                    "Unauthorized.",
-                    ActionType.Unauthorized
-                );
-            }
-
             var organizers = await _repository.GetOrganizersAsync();
 
             return _responseFactory.CreateResponse(
@@ -378,18 +359,10 @@ public class UserService : IUserService
     }
 
     // 10. Get Buyer (for filter)
-    public async Task<IServiceResponse<IEnumerable<Users>>> GetBuyersAsync(string actingRole)
+    public async Task<IServiceResponse<IEnumerable<Users>>> GetBuyersAsync()
     {
         try
         {
-            if (actingRole != "Admin")
-            {
-                return _responseFactory.CreateResponse<IEnumerable<Users>>(
-                    false,
-                    "Unauthorized.",
-                    ActionType.Unauthorized
-                );
-            }
 
             var buyers = await _repository.GetBuyersAsync();
 

@@ -6,7 +6,6 @@ namespace Eventpro.Domain.Interfaces.IEvents
     public interface IEventService
     {
         Task<IServiceResponse<IEnumerable<Events>>> GetAllEventsAsync(
-            string actingRole,
             Guid? eventId = null,
             string? name = null,
             string? organizedBy = null,
@@ -48,6 +47,6 @@ namespace Eventpro.Domain.Interfaces.IEvents
             string actingRole,
             Guid actingUserId
         );
-        Task<IServiceResponse<IEnumerable<Events>>> GetEventsAsync(string actingRole);
+        Task<IServiceResponse<IEnumerable<Events>>> GetEventsAsync();
     }
 }

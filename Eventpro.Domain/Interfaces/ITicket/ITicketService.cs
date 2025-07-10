@@ -6,7 +6,6 @@ namespace Eventpro.Domain.Interfaces.ITicket
     public interface ITicketService
     {
         Task<IServiceResponse<IEnumerable<Tickets>>> GetAllTicketsAsync(
-            string actingRole,
             Guid? ticketId = null,
             Guid? eventId = null,
             string eventName = null,

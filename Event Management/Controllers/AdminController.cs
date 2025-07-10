@@ -1,4 +1,5 @@
 ﻿using Event_Management.Helpers;
+using Event_Management.ViewModels;
 using Eventpro.Domain.Interfaces.IEvents;
 using Eventpro.Domain.Interfaces.IGallery;
 using Eventpro.Domain.Interfaces.IProvide;
@@ -7,11 +8,14 @@ using Eventpro.Domain.Interfaces.ITicket;
 using Eventpro.Domain.Interfaces.IUser;
 using Eventpro.Domain.Models;
 using Eventpro.Domain.ResponseFormat;
-using Event_Management.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 namespace Event_Management.Controllers
 {
+    [Authorize(Roles = "Admin")]
     public class AdminController : Controller
     {
 
@@ -34,28 +38,41 @@ namespace Event_Management.Controllers
             _userRepository = userRepository;
         }
 
-        // FUNCTION FOR ADMIN ACCESS
+        // FUNCTION FOR ADMIN ACCESS - User
         private async Task<Users> GetAdminUser()
         {
-            Guid userId;
-
             try
             {
-                userId = SessionTokenHelper.GetIdFromSession(HttpContext.Session);
+                var token = HttpContext.Request.Cookies["Token"];
+                if (string.IsNullOrEmpty(token))
+                    return null;
+
+                var handler = new JwtSecurityTokenHandler();
+                JwtSecurityToken jwtToken;
+
+                try
+                {
+                    jwtToken = handler.ReadJwtToken(token);
+                }
+                catch
+                {
+                    return null;
+                }
+
+                var userIdClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
+                if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var userId))
+                    return null;
+
+                var user = await _userRepository.GetByIdAsync(userId);
+                if (user == null || user.Role != "Admin")
+                    return null;
+
+                return user;
             }
             catch
             {
                 return null;
             }
-
-            var user = await _userRepository.GetByIdAsync(userId);
-
-            if (user == null || user.Role != "Admin")
-            {
-                return null;
-            }
-
-            return user;
         }
 
 
@@ -70,10 +87,6 @@ namespace Event_Management.Controllers
         {
             try
             {
-                var user = await GetAdminUser();
-                if (user == null)
-                    return RedirectToAction("Index", "Home");
-
                 var listResponse = await _servService.GetAllAsync(title);
                 ViewBag.ServicesList = (listResponse.Data ?? Enumerable.Empty<Services>()).ToList();
                 ViewData["TitleQuery"] = title;
@@ -100,13 +113,8 @@ namespace Event_Management.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Service(Services model, IFormFile? BannerFile)
         {
-            Console.WriteLine("==>" + BannerFile);
             try
             {
-                var user = await GetAdminUser();
-                if (user == null)
-                    return RedirectToAction("Index", "Home");
-
                 if (string.IsNullOrWhiteSpace(model.Title))
                     ModelState.AddModelError("Title", "Title is required.");
                 if (string.IsNullOrWhiteSpace(model.Description))
@@ -130,11 +138,11 @@ namespace Event_Management.Controllers
                 IServiceResponse<Services> result;
                 if (model.Id == Guid.Empty)
                 {
-                    result = await _servService.CreateAsync(model, user.Role);
+                    result = await _servService.CreateAsync(model);
                 }
                 else
                 {
-                    result = await _servService.UpdateAsync(model, user.Role);
+                    result = await _servService.UpdateAsync(model);
                 }
 
                 if (!result.Success)
@@ -162,10 +170,6 @@ namespace Event_Management.Controllers
         {
             try
             {
-                var user = await GetAdminUser();
-                if (user == null)
-                    return RedirectToAction("Index", "Home");
-
                 var result = await _servService.DeleteAsync(id);
                 if (!result.Success)
                 {
@@ -185,16 +189,12 @@ namespace Event_Management.Controllers
                    P R O V I D E
         --------------------------------------*/
 
-        // GER
+        // GET
         [HttpGet("admin/provide")]
         public async Task<IActionResult> Provide(string title, Guid? id)
         {
             try
             {
-                var user = await GetAdminUser();
-                if (user == null)
-                    return RedirectToAction("Index", "Home");
-
                 var listResponse = await _provideService.GetAllAsync(title);
                 ViewBag.ProvideList = (listResponse.Data ?? Enumerable.Empty<Provides>()).ToList();
                 ViewData["TitleQuery"] = title;
@@ -223,10 +223,6 @@ namespace Event_Management.Controllers
         {
             try
             {
-                var user = await GetAdminUser();
-                if (user == null)
-                    return RedirectToAction("Index", "Home");
-
                 if (string.IsNullOrWhiteSpace(model.Title))
                     ModelState.AddModelError("Title", "Title is required.");
 
@@ -251,11 +247,11 @@ namespace Event_Management.Controllers
                 IServiceResponse<Provides> result;
                 if (model.Id == Guid.Empty)
                 {
-                    result = await _provideService.CreateAsync(model, user.Role);
+                    result = await _provideService.CreateAsync(model);
                 }
                 else
                 {
-                    result = await _provideService.UpdateAsync(model, user.Role);
+                    result = await _provideService.UpdateAsync(model);
                 }
 
                 if (!result.Success)
@@ -282,10 +278,6 @@ namespace Event_Management.Controllers
         {
             try
             {
-                var user = await GetAdminUser();
-                if (user == null)
-                    return RedirectToAction("Index", "Home");
-
                 var result = await _provideService.DeleteAsync(id);
                 if (!result.Success)
                 {
@@ -311,10 +303,6 @@ namespace Event_Management.Controllers
         {
             try
             {
-                var user = await GetAdminUser();
-                if (user == null)
-                    return RedirectToAction("Index", "Home");
-
                 var result = await _galleryService.GetAllAsync(name, type);
                 ViewBag.GalleryList = (result.Data ?? Enumerable.Empty<Gallery>()).ToList();
 
@@ -345,10 +333,6 @@ namespace Event_Management.Controllers
         {
             try
             {
-                var user = await GetAdminUser();
-                if (user == null)
-                    return RedirectToAction("Index", "Home");
-
                 if (string.IsNullOrWhiteSpace(model.Name))
                     ModelState.AddModelError("Name", "Name is required.");
                 if (string.IsNullOrWhiteSpace(model.Description))
@@ -371,7 +355,7 @@ namespace Event_Management.Controllers
                         model.Banner = await FileUploadHelper.SaveFileAsync(BannerFile, "gallery");
                     }
 
-                    var updateResult = await _galleryService.UpdateAsync(model, user.Role);
+                    var updateResult = await _galleryService.UpdateAsync(model);
                     if (!updateResult.Success)
                     {
                         ModelState.AddModelError("", updateResult.Message);
@@ -393,7 +377,7 @@ namespace Event_Management.Controllers
 
                     model.Banner = await FileUploadHelper.SaveFileAsync(BannerFile, "gallery");
 
-                    var createResult = await _galleryService.CreateAsync(model, user.Role);
+                    var createResult = await _galleryService.CreateAsync(model);
                     if (!createResult.Success)
                     {
                         ModelState.AddModelError("", createResult.Message);
@@ -419,10 +403,6 @@ namespace Event_Management.Controllers
         {
             try
             {
-                var user = await GetAdminUser();
-                if (user == null)
-                    return RedirectToAction("Index", "Home");
-
                 var result = await _galleryService.DeleteAsync(id);
                 if (!result.Success)
                 {
@@ -448,12 +428,7 @@ namespace Event_Management.Controllers
         {
             try
             {
-                var admin = await GetAdminUser();
-                if (admin == null)
-                    return RedirectToAction("Index", "Home");
-
                 var allUsersResponse = await _userService.GetAllUsersAsync(
-                    admin.Role,
                     userId,
                     name,
                     email,
@@ -607,14 +582,7 @@ namespace Event_Management.Controllers
         {
             try
             {
-                var user = await GetAdminUser();
-                if (user == null)
-                {
-                    return RedirectToAction("Index", "Home");
-                }
-
                 var eventsResponse = await _eventService.GetAllEventsAsync(
-                    actingRole: user.Role,
                     eventId: eventId,
                     name: name,
                     organizedBy: organizedBy,
@@ -630,8 +598,8 @@ namespace Event_Management.Controllers
                     return RedirectToAction("Index", "Home");
                 }
 
-                var allUsersResponse = await _userService.GetAllUsersAsync(user.Role);
-                var organizersResponse = await _userService.GetOrganizersAsync(user.Role);
+                var allUsersResponse = await _userService.GetAllUsersAsync();
+                var organizersResponse = await _userService.GetOrganizersAsync();
 
                 var model = new EventListViewModel
                 {
@@ -665,12 +633,6 @@ namespace Event_Management.Controllers
         {
             try
             {
-                var user = await GetAdminUser();
-                if (user == null)
-                {
-                    return RedirectToAction("Index", "Home");
-                }
-
                 var eventResponse = await _eventService.GetEventByIdAsync(id);
                 if (!eventResponse.Success || eventResponse.Data == null)
                 {
@@ -745,14 +707,7 @@ namespace Event_Management.Controllers
         {
             try
             {
-                var user = await GetAdminUser();
-                if (user == null)
-                {
-                    return RedirectToAction("Index", "Home");
-                }
-
                 var ticketsResponse = await _ticketService.GetAllTicketsAsync(
-                    user.Role,
                     ticketId,
                     eventId,
                     eventName,
@@ -766,9 +721,9 @@ namespace Event_Management.Controllers
                     return RedirectToAction("Index", "Home");
                 }
 
-                var organizersResponse = await _userService.GetOrganizersAsync(user.Role);
-                var buyersResponse = await _userService.GetBuyersAsync(user.Role);
-                var eventsResponse = await _eventService.GetEventsAsync(user.Role);
+                var organizersResponse = await _userService.GetOrganizersAsync();
+                var buyersResponse = await _userService.GetBuyersAsync();
+                var eventsResponse = await _eventService.GetEventsAsync();
 
                 if (!organizersResponse.Success || !buyersResponse.Success || !eventsResponse.Success)
                 {
@@ -804,6 +759,7 @@ namespace Event_Management.Controllers
         --------------------------------------*/
 
         // GET
+        [AllowAnonymous]
         [HttpGet]
         [Route("admin-login")]
         public IActionResult Login()
@@ -812,9 +768,10 @@ namespace Event_Management.Controllers
         }
 
         // POST
+        [AllowAnonymous]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Route("admin-login")]
+        [Route("/admin-login")]
         public async Task<IActionResult> Login(string email, string password)
         {
             try
@@ -836,8 +793,13 @@ namespace Event_Management.Controllers
                     return View();
                 }
 
-                // Save token in session
-                HttpContext.Session.SetString("Token", result.Data.Token);
+                // Set token in a cookie (HTTP-only and temporary)
+                Response.Cookies.Append("Token", result.Data.Token, new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true,
+                    SameSite = SameSiteMode.Strict
+                });
 
                 return RedirectToAction("Service", "Admin");
             }
@@ -851,9 +813,10 @@ namespace Event_Management.Controllers
         /*--------------------------------------
                      L O G O U T
         --------------------------------------*/
+        [AllowAnonymous]
         public IActionResult Logout()
         {
-            HttpContext.Session.Clear();
+            Response.Cookies.Delete("Token");
             return RedirectToAction("Index", "Home");
         }
 

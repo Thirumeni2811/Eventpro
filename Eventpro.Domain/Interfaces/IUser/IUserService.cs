@@ -12,7 +12,6 @@ public interface IUserService
     Task<IServiceResponse<Users>> UpdateProfileAsync(Guid userId, Users updatedUser, string actingRole, Guid actingUserId);
     Task<IServiceResponse<bool>> DeleteUserAsync(Guid userId, string actingRole, Guid actingUserId);
     Task<IServiceResponse<IEnumerable<Users>>> GetAllUsersAsync(
-        string actingRole,
         string? userId = null,
         string? name = null,
         string? email = null,
@@ -20,7 +19,7 @@ public interface IUserService
         string? role = null
     );
     Task<IServiceResponse<Users>> GetUserByIdAsync(Guid userId);
-    Task<IServiceResponse<IEnumerable<Users>>> GetOrganizersAsync(string actingRole);
-    Task<IServiceResponse<IEnumerable<Users>>> GetBuyersAsync(string actingRole);
+    Task<IServiceResponse<IEnumerable<Users>>> GetOrganizersAsync();
+    Task<IServiceResponse<IEnumerable<Users>>> GetBuyersAsync();
 
 }

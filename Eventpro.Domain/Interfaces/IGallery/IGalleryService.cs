@@ -7,8 +7,8 @@ namespace Eventpro.Domain.Interfaces.IGallery
     {
         Task<IServiceResponse<IEnumerable<Gallery>>> GetAllAsync(string? nameFilter = null, string? typeFilter = null);
         Task<IServiceResponse<Gallery?>> GetByIdAsync(Guid id);
-        Task<IServiceResponse<Gallery>> CreateAsync(Gallery gallery, string actingRole);
-        Task<IServiceResponse<Gallery>> UpdateAsync(Gallery gallery, string actingRole);
+        Task<IServiceResponse<Gallery>> CreateAsync(Gallery gallery);
+        Task<IServiceResponse<Gallery>> UpdateAsync(Gallery gallery);
         Task<IServiceResponse<bool>> DeleteAsync(Guid id);
     }
 }

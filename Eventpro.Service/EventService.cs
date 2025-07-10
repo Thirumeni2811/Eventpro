@@ -21,7 +21,6 @@ namespace Eventpro.Service
 
         // GET ALL EVENTS
         public async Task<IServiceResponse<IEnumerable<Events>>> GetAllEventsAsync(
-            string actingRole,
             Guid? eventId = null,
             string name = null,
             string organizedBy = null,
@@ -32,11 +31,6 @@ namespace Eventpro.Service
         {
             try
             {
-                if (actingRole != "Admin")
-                    return _responseFactory.CreateResponse<IEnumerable<Events>>(
-                        false, "Unauthorized.", ActionType.Unauthorized
-                    );
-
                 var list = await _repository.GetFilteredAsync(
                     eventId, name, organizedBy, type, venue, status, isPaid
                 );
@@ -316,19 +310,10 @@ namespace Eventpro.Service
         }
 
         // GET EVENT
-        public async Task<IServiceResponse<IEnumerable<Events>>> GetEventsAsync(string actingRole)
+        public async Task<IServiceResponse<IEnumerable<Events>>> GetEventsAsync()
         {
             try
             {
-                if (actingRole != "Admin")
-                {
-                    return _responseFactory.CreateResponse<IEnumerable<Events>>(
-                        false,
-                        "Unauthorized.",
-                        ActionType.Unauthorized
-                    );
-                }
-
                 var events = await _repository.GetEventsAsync();
 
                 return _responseFactory.CreateResponse(

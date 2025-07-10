@@ -68,19 +68,10 @@ namespace Eventpro.Service
         }
 
         // create
-        public async Task<IServiceResponse<Provides>> CreateAsync(Provides prov, string actingRole)
+        public async Task<IServiceResponse<Provides>> CreateAsync(Provides prov)
         {
             try
             {
-                if (actingRole != "Admin")
-                {
-                    return _responseFactory.CreateResponse<Provides>(
-                        false,
-                        "Unauthorized: Only Admins can create provides.",
-                        ActionType.Unauthorized
-                    );
-                }
-
                 prov.Id = Guid.NewGuid();
                 await _repository.AddAsync(prov);
                 await _repository.SaveChangesAsync();
@@ -99,19 +90,10 @@ namespace Eventpro.Service
         }
 
         // update
-        public async Task<IServiceResponse<Provides>> UpdateAsync(Provides prov, string actingRole)
+        public async Task<IServiceResponse<Provides>> UpdateAsync(Provides prov)
         {
             try
             {
-                if (actingRole != "Admin")
-                {
-                    return _responseFactory.CreateResponse<Provides>(
-                        false,
-                        "Unauthorized: Only Admins can update provides.",
-                        ActionType.Unauthorized
-                    );
-                }
-
                 var existing = await _repository.GetByIdAsync(prov.Id);
                 if (existing == null)
                 {

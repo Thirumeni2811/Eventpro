@@ -16,7 +16,7 @@ namespace Eventpro.Service.Helpers
             _settings = options.Value;
         }
 
-        public string GenerateToken(Guid userId, string email)
+        public string GenerateToken(Guid userId, string email, string role)
         {
             var secretKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_settings.SecretKey));
             var signinCredentials = new SigningCredentials(secretKey, SecurityAlgorithms.HmacSha256);
@@ -26,8 +26,9 @@ namespace Eventpro.Service.Helpers
                 audience: _settings.Audience,
                 claims: new[]
                 {
-                    new Claim("uid", userId.ToString()),
-                    new Claim("Email", email)
+                    new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
+                    new Claim(ClaimTypes.Email, email),
+                    new Claim(ClaimTypes.Role, role) // important for [Authorize(Roles = ...)]
                 },
                 expires: DateTime.UtcNow.AddDays(30),
                 signingCredentials: signinCredentials

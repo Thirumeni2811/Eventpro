@@ -20,7 +20,6 @@ namespace Eventpro.Service
 
         // get all
         public async Task<IServiceResponse<IEnumerable<Tickets>>> GetAllTicketsAsync(
-            string actingRole,
             Guid? ticketId = null,
             Guid? eventId = null,
             string eventName = null,
@@ -29,15 +28,6 @@ namespace Eventpro.Service
         {
             try
             {
-                if (actingRole != "Admin")
-                {
-                    return _responseFactory.CreateResponse<IEnumerable<Tickets>>(
-                        false,
-                        "Unauthorized.",
-                        ActionType.Unauthorized
-                    );
-                }
-
                 var tickets = await _repository.GetAllTicketsAsync(
                     ticketId,
                     eventId,

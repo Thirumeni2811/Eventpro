@@ -7,8 +7,8 @@ namespace Eventpro.Domain.Interfaces.IProvide
     {
         Task<IServiceResponse<IEnumerable<Provides>>> GetAllAsync(string? titleFilter = null);
         Task<IServiceResponse<Provides?>> GetByIdAsync(Guid id);
-        Task<IServiceResponse<Provides>> CreateAsync(Provides prov, string actingRole);
-        Task<IServiceResponse<Provides>> UpdateAsync(Provides prov, string actingRole);
+        Task<IServiceResponse<Provides>> CreateAsync(Provides prov);
+        Task<IServiceResponse<Provides>> UpdateAsync(Provides prov);
         Task<IServiceResponse<bool>> DeleteAsync(Guid id);
     }
 }

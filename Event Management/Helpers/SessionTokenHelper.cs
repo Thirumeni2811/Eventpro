@@ -10,6 +10,7 @@ namespace Event_Management.Helpers
         public static Guid GetIdFromSession(ISession session)
         {
             var token = session.GetString("Token");
+            Console.WriteLine("=====>" + token);
             if (string.IsNullOrEmpty(token))
                 throw new Exception("Token not found in session");
 

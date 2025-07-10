@@ -71,19 +71,10 @@ namespace Eventpro.Service
         }
 
         // Create
-        public async Task<IServiceResponse<Gallery>> CreateAsync(Gallery gallery, string actingRole)
+        public async Task<IServiceResponse<Gallery>> CreateAsync(Gallery gallery)
         {
             try
             {
-                if (actingRole != "Admin")
-                {
-                    return _responseFactory.CreateResponse<Gallery>(
-                        false,
-                        "Unauthorized: Only Admins can create gallery items.",
-                        ActionType.Unauthorized
-                    );
-                }
-
                 gallery.Id = Guid.NewGuid();
                 await _repository.AddAsync(gallery);
                 await _repository.SaveChangesAsync();
@@ -102,19 +93,10 @@ namespace Eventpro.Service
         }
 
         // Update
-        public async Task<IServiceResponse<Gallery>> UpdateAsync(Gallery gallery, string actingRole)
+        public async Task<IServiceResponse<Gallery>> UpdateAsync(Gallery gallery)
         {
             try
             {
-                if (actingRole != "Admin")
-                {
-                    return _responseFactory.CreateResponse<Gallery>(
-                        false,
-                        "Unauthorized: Only Admins can update gallery items.",
-                        ActionType.Unauthorized
-                    );
-                }
-
                 var existing = await _repository.GetByIdAsync(gallery.Id);
                 if (existing == null)
                 {
