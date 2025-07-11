@@ -12,19 +12,27 @@ namespace Event_Management.Helpers
         {
             var token = request.Cookies["Token"];
             if (string.IsNullOrEmpty(token))
-                throw new Exception("Token not found in cookies");
+                return Guid.Empty;
 
             var handler = new JwtSecurityTokenHandler();
-            var jwtToken = handler.ReadJwtToken(token);
+            JwtSecurityToken jwtToken;
+
+            try
+            {
+                jwtToken = handler.ReadJwtToken(token);
+            }
+            catch
+            {
+                return Guid.Empty; // Invalid JWT format
+            }
 
             var uidClaim = jwtToken.Claims.FirstOrDefault(c =>
                 c.Type == ClaimTypes.NameIdentifier || c.Type == "sub");
 
             if (uidClaim == null || !Guid.TryParse(uidClaim.Value, out Guid userId))
-                throw new Exception("Invalid or missing user ID in token");
+                return Guid.Empty;
 
             return userId;
         }
-
     }
 }

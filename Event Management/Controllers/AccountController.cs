@@ -1,7 +1,9 @@
 ﻿using Event_Management.Helpers;
+using Event_Management.ViewModels;
 using Eventpro.Domain.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.ComponentModel.DataAnnotations;
 
 namespace Event_Management.Controllers
 {
@@ -34,6 +36,9 @@ namespace Event_Management.Controllers
         {
             user.Role = "Organizer";
 
+            if (!new EmailAddressAttribute().IsValid(user.Email))
+                ModelState.AddModelError("Email", "Invalid email format.");
+
             if (string.IsNullOrWhiteSpace(user.Person))
                 ModelState.AddModelError("Person", "Contact person name is required.");
 
@@ -42,6 +47,9 @@ namespace Event_Management.Controllers
 
             if (string.IsNullOrWhiteSpace(user.Password))
                 ModelState.AddModelError(nameof(user.Password), "Password is required.");
+
+            else if (user.Password.Length < 8)
+                ModelState.AddModelError(nameof(user.Password), "Password must be at least 8 characters long.");
 
             if (string.IsNullOrWhiteSpace(user.CPassword))
                 ModelState.AddModelError(nameof(user.CPassword), "Please confirm your password.");
@@ -59,11 +67,18 @@ namespace Event_Management.Controllers
 
             try
             {
-                var result = await _userService.CreateUserProfileAsync(user);
-
+                var result = await _userService.CreateOrganizerProfileAsync(user);
                 if (!result.Success)
                 {
-                    ModelState.AddModelError(string.Empty, result.Message);
+                    if (result.Message.Contains("Email already exists", StringComparison.OrdinalIgnoreCase))
+                    {
+                        ModelState.AddModelError("Email", result.Message);
+                    }
+                    else
+                    {
+                        ModelState.AddModelError(string.Empty, result.Message);
+                    }
+
                     return View(user);
                 }
 
@@ -103,8 +118,14 @@ namespace Event_Management.Controllers
             ModelState.Remove("Address");
             ModelState.Remove("Role");
 
+            if (!new EmailAddressAttribute().IsValid(user.Email))
+                ModelState.AddModelError("Email", "Invalid email format.");
+
             if (string.IsNullOrWhiteSpace(user.Password))
                 ModelState.AddModelError(nameof(user.Password), "Password is required.");
+
+            else if (user.Password.Length < 8)
+                ModelState.AddModelError(nameof(user.Password), "Password must be at least 8 characters long.");
 
             if (string.IsNullOrWhiteSpace(user.CPassword))
                 ModelState.AddModelError(nameof(user.CPassword), "Please confirm your password.");
@@ -128,7 +149,15 @@ namespace Event_Management.Controllers
 
                 if (!result.Success)
                 {
-                    ModelState.AddModelError(string.Empty, result.Message);
+                    if (result.Message.Contains("Email already exists", StringComparison.OrdinalIgnoreCase))
+                    {
+                        ModelState.AddModelError("Email", result.Message);
+                    }
+                    else
+                    {
+                        ModelState.AddModelError(string.Empty, result.Message);
+                    }
+
                     return View(user);
                 }
 
@@ -170,26 +199,16 @@ namespace Event_Management.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Route("/org-login")]
-        public async Task<IActionResult> Login(string email, string password)
+        public async Task<IActionResult> Login(LoginViewModel log)
         {
-            if (string.IsNullOrWhiteSpace(email))
-            {
-                ModelState.AddModelError(nameof(email), "Email is required.");
-            }
-
-            if (string.IsNullOrWhiteSpace(password))
-            {
-                ModelState.AddModelError(nameof(password), "Password is required.");
-            }
-
             if (!ModelState.IsValid)
             {
-                return View();
+                return View(log);
             }
 
             try
             {
-                var result = await _userService.LoginOrganizerAsync(email, password);
+                var result = await _userService.LoginOrganizerAsync(log.Email, log.Password);
 
                 if (!result.Success)
                 {
@@ -217,26 +236,16 @@ namespace Event_Management.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Route("/user-login")]
-        public async Task<IActionResult> UserLogin(string email, string password)
+        public async Task<IActionResult> UserLogin(LoginViewModel log)
         {
-            if (string.IsNullOrWhiteSpace(email))
-            {
-                ModelState.AddModelError(nameof(email), "Email is required.");
-            }
-
-            if (string.IsNullOrWhiteSpace(password))
-            {
-                ModelState.AddModelError(nameof(password), "Password is required.");
-            }
-
             if (!ModelState.IsValid)
             {
-                return View();
+                return View(log);
             }
 
             try
             {
-                var result = await _userService.LoginUserAsync(email, password);
+                var result = await _userService.LoginUserAsync(log.Email, log.Password);
 
                 if (!result.Success)
                 {

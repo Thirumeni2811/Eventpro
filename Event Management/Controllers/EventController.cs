@@ -22,6 +22,7 @@ namespace Event_Management.Controllers
         }
 
         // Step -1 : Basic Event information
+        [AllowAnonymous]
         [HttpGet]
         [Route("/create-event")]
         public async Task<IActionResult> Basics()

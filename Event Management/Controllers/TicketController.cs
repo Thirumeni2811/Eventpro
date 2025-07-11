@@ -27,6 +27,7 @@ namespace Event_Management.Controllers
         }
 
         // Get all events
+        [AllowAnonymous]
         [HttpGet]
         [Route("all-events")]
         public async Task<IActionResult> AllEvents(string eventName, string status, string type, string venue)
