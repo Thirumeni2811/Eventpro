@@ -1,7 +1,7 @@
 ﻿using Eventpro.Domain.Exceptions;
 using Eventpro.Domain.Interfaces.IUser;
 using Eventpro.Domain.Models;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore; // 1. Database Context Access | 2. LINQ Queries on DbSet | 3. Entity Configuration
 
 namespace Eventpro.DataAccess
 {

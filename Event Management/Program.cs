@@ -33,6 +33,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Bind JwtSettings from appsettings.json
+// Dependency Injection is a design pattern used to achieve loose coupling between classes.
 // loose coupling
 builder.Services.Configure<JwtSettings>(
     builder.Configuration.GetSection("JwtSettings"));
