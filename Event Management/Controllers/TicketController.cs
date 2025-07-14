@@ -1,5 +1,4 @@
-﻿using Event_Management.Data;
-using Event_Management.Helpers;
+﻿using Event_Management.Helpers;
 using Event_Management.ViewModels;
 using Eventpro.Domain.Exceptions;
 using Eventpro.Domain.Interfaces.IEvents;
