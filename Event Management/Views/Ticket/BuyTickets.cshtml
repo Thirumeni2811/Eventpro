@@ -73,7 +73,12 @@
 <section class="ticData">
 
     <div class="type-det">
-
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="error-message">
+                @TempData["ErrorMessage"]
+            </div>
+        }
         <form id="ticketForm" asp-controller="Ticket" asp-action="BookTickets" asp-route-id="@Model?.Event?.Id" method="post">
             @if (!ViewData.ModelState.IsValid)
             {

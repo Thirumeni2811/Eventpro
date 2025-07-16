@@ -202,7 +202,7 @@ namespace Event_Management.Controllers
             {
                 if (quantities == null || quantities.All(q => q.Value <= 0))
                 {
-                    ModelState.AddModelError("", "Please select at least one ticket.");
+                    TempData["ErrorMessage"] = "Please select at least one ticket.";
                     return RedirectToAction("BuyTickets", "Ticket", new { id });
                 }
 
@@ -223,7 +223,7 @@ namespace Event_Management.Controllers
                 if (!eventResponse.Success || eventResponse.Data == null)
                 {
                     TempData["ErrorMessage"] = "Event not found.";
-                    return RedirectToAction("AllEvents", "Event");
+                    return RedirectToAction("BuyTickets");
                 }
                 var ev = eventResponse.Data;
 
@@ -232,7 +232,7 @@ namespace Event_Management.Controllers
                 if (!bookedQuantityResponse.Success)
                 {
                     TempData["ErrorMessage"] = bookedQuantityResponse.Message;
-                    return RedirectToAction("AllEvents", "Event");
+                    return RedirectToAction("BuyTickets");
                 }
                 int existingTickets = bookedQuantityResponse.Data;
 
@@ -334,7 +334,7 @@ namespace Event_Management.Controllers
             catch (ServiceException ex)
             {
                 TempData["ErrorMessage"] = ex.Message;
-                return RedirectToAction("AllEvents", "Event");
+                return RedirectToAction("BuyTickets");
             }
         }
 
